@@ -343,7 +343,7 @@ function fetchUpcomingEvents() {
   content.innerHTML = '<p class="gcal-loading">Loading events...</p>';
   const now = new Date().toISOString();
   const end = new Date(Date.now() + 7 * DAY_MS).toISOString();
-  const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(now)}&timeMax=${encodeURIComponent(end)}&singleEvents=true&orderBy=startTime&maxResults=20`;
+  const url = `https://www.googleapis.com/calendar/v3/calendars/School/events?timeMin=${encodeURIComponent(new Date().toISOString())}&timeMax=${encodeURIComponent(new Date().toISOString())}&singleEvents=true&orderBy=startTime&maxResults=20`;
   fetch(url, { headers: { Authorization: 'Bearer ' + gcalToken } })
     .then(r => r.json())
     .then(data => {
