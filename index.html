@@ -343,14 +343,38 @@ function fetchUpcomingEvents() {
   content.innerHTML = '<p class="gcal-loading">Loading events...</p>';
   const now = new Date().toISOString();
   const end = new Date(Date.now() + 7 * DAY_MS).toISOString();
-  const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(now)}&timeMax=${encodeURIComponent(end)}&singleEvents=true&orderBy=startTime&maxResults=20`;
-  fetch(url, { headers: { Authorization: 'Bearer ' + gcalToken } })
-    .then(r => r.json())
-    .then(data => {
-      if (data.error) { content.innerHTML = `<p class="gcal-error">${data.error.message}</p>`; return; }
-      renderEvents(data.items || []);
-    })
-    .catch(() => { content.innerHTML = '<p class="gcal-error">Failed to load events.</p>'; });
+
+  // Step 1: get all calendars the user has
+  fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
+    headers: { Authorization: 'Bearer ' + gcalToken }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) { content.innerHTML = `<p class="gcal-error">${data.error.message}</p>`; return; }
+
+    const calendars = (data.items || []);
+
+    // Step 2: fetch events from every calendar in parallel
+    const fetches = calendars.map(cal =>
+      fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events?timeMin=${encodeURIComponent(now)}&timeMax=${encodeURIComponent(end)}&singleEvents=true&orderBy=startTime&maxResults=50`, {
+        headers: { Authorization: 'Bearer ' + gcalToken }
+      })
+      .then(r => r.json())
+      .then(d => (d.items || []).map(ev => ({ ...ev, _calColor: cal.backgroundColor || null })))
+      .catch(() => [])
+    );
+
+    // Step 3: merge all events and sort by start time
+    Promise.all(fetches).then(results => {
+      const all = results.flat().sort((a, b) => {
+        const ta = a.start.dateTime || a.start.date;
+        const tb = b.start.dateTime || b.start.date;
+        return ta < tb ? -1 : ta > tb ? 1 : 0;
+      });
+      renderEvents(all);
+    });
+  })
+  .catch(() => { content.innerHTML = '<p class="gcal-error">Failed to load calendars.</p>'; });
 }
 
 function renderEvents(events) {
@@ -377,14 +401,14 @@ function renderEvents(events) {
 
     const rows = grouped[dateKey].map(ev => {
       const calId = ev.organizer?.email || 'default';
-      if (!calColorMap[calId]) { calColorMap[calId] = colors[colorIdx % colors.length]; colorIdx++; }
+      const dotColor = ev._calColor || (calColorMap[calId] || (calColorMap[calId] = colors[colorIdx++ % colors.length]));
       const timeStr = ev.start.date ? 'All day' : (() => {
         const s = new Date(ev.start.dateTime), e = new Date(ev.end.dateTime);
         const f = t => t.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
         return `${f(s)} – ${f(e)}`;
       })();
       return `<div class="event-row">
-        <div class="event-dot" style="background:${calColorMap[calId]}"></div>
+        <div class="event-dot" style="background:${dotColor}"></div>
         <div class="event-body">
           <div class="event-title">${ev.summary || '(No title)'}</div>
           <div class="event-time">${timeStr}</div>
