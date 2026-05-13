@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Life OS</title>
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <style>
+    :root {
+      --gap: 12px;
+      --color-bg: #ffffff;
+      --color-bg-secondary: #f5f5f4;
+      --color-text: #1a1a1a;
+      --color-text-secondary: #6b7280;
+      --color-text-tertiary: #9ca3af;
+      --color-border: rgba(0,0,0,0.12);
+      --color-border-secondary: rgba(0,0,0,0.2);
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --green: #1D9E75;
+      --green-light: #E1F5EE;
+      --green-dark: #0F6E56;
+      --amber: #BA7517;
+      --amber-light: #FAEEDA;
+      --red: #E24B4A;
+      --red-dark: #A32D2D;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-bg: #1c1c1e;
+        --color-bg-secondary: #2c2c2e;
+        --color-text: #f5f5f5;
+        --color-text-secondary: #a1a1aa;
+        --color-text-tertiary: #71717a;
+        --color-border: rgba(255,255,255,0.1);
+        --color-border-secondary: rgba(255,255,255,0.18);
+        --green-light: #0a3d2e;
+        --amber-light: #3d2a08;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--color-bg-secondary); color: var(--color-text); min-height: 100vh; }
+    .container { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem; }
+    .dashboard { }
+    .top-bar { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1.5rem; }
+    .top-bar h1 { font-size: 20px; font-weight: 600; color: var(--color-text); }
+    .top-bar .date { font-size: 13px; color: var(--color-text-secondary); }
+    .section-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-tertiary); margin-bottom: 8px; }
+    .metric-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--gap); margin-bottom: 1.5rem; }
+    .metric-card { background: var(--color-bg-secondary); border-radius: var(--radius-md); padding: 12px 14px; }
+    .metric-card .label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 4px; }
+    .metric-card .value { font-size: 22px; font-weight: 500; color: var(--color-text); line-height: 1; }
+    .metric-card .sub { font-size: 11px; color: var(--color-text-tertiary); margin-top: 3px; }
+    .metric-card.good .value { color: var(--green); }
+    .metric-card.warn .value { color: var(--amber); }
+    .metric-card.bad .value { color: var(--red-dark); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); margin-bottom: 1.5rem; }
+    @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+    .card { background: var(--color-bg); border: 0.5px solid var(--color-border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
+    .card-title { font-size: 13px; font-weight: 500; color: var(--color-text); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .habit-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 0.5px solid var(--color-border); }
+    .habit-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .habit-name { font-size: 13px; color: var(--color-text); }
+    .habit-streak { font-size: 12px; color: var(--color-text-secondary); }
+    .dot-row { display: flex; gap: 4px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--color-border); }
+    .dot.done { background: var(--green); }
+    .dot.miss { background: var(--red); }
+    .dot.today { background: var(--color-border-secondary); border: 1.5px solid var(--color-text-secondary); }
+    .log-btn { font-size: 11px; padding: 3px 10px; border-radius: var(--radius-md); border: 0.5px solid var(--color-border-secondary); background: transparent; color: var(--color-text-secondary); cursor: pointer; }
+    .log-btn:hover { background: var(--color-bg-secondary); }
+    .log-btn.logged { background: var(--color-bg-secondary); color: var(--green); border-color: var(--green); }
+    .lift-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--color-border); }
+    .lift-row:last-child { border-bottom: none; }
+    .lift-name { font-size: 13px; color: var(--color-text); }
+    .lift-right { display: flex; align-items: center; gap: 10px; }
+    .lift-val { font-size: 13px; font-weight: 500; color: var(--color-text); min-width: 60px; text-align: right; }
+    .lift-delta { font-size: 11px; }
+    .lift-delta.up { color: var(--green); }
+    .lift-delta.same { color: var(--color-text-tertiary); }
+    .bar-wrap { margin: 6px 0; }
+    .bar-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; }
+    .bar-track { height: 6px; background: var(--color-bg-secondary); border-radius: 3px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+    .bar-fill.green { background: var(--green); }
+    .bar-fill.amber { background: var(--amber); }
+    .bar-fill.red { background: var(--red); }
+    .goal-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--color-border); }
+    .goal-row:last-child { border-bottom: none; }
+    .goal-body { flex: 1; }
+    .goal-title { font-size: 13px; color: var(--color-text); margin-bottom: 3px; }
+    .goal-meta { font-size: 11px; color: var(--color-text-tertiary); }
+    .goal-status { font-size: 11px; padding: 2px 8px; border-radius: var(--radius-md); white-space: nowrap; cursor: pointer; }
+    .goal-status.active { background: var(--green-light); color: var(--green-dark); }
+    .goal-status.pending { background: var(--amber-light); color: #854F0B; }
+    .goal-status.done { background: #EAF3DE; color: #3B6D11; }
+    .screen-summary { display: flex; gap: var(--gap); margin-bottom: 10px; }
+    .screen-box { flex: 1; background: var(--color-bg-secondary); border-radius: var(--radius-md); padding: 10px 12px; text-align: center; }
+    .screen-box .sv { font-size: 20px; font-weight: 500; color: var(--color-text); }
+    .screen-box .sl { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; }
+    .sv.good { color: var(--green); }
+    .sv.bad { color: var(--red); }
+    .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .week-cell { aspect-ratio: 1; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; }
+    .week-cell.s0 { background: var(--color-bg-secondary); }
+    .week-cell.s1 { background: #9FE1CB; color: #085041; }
+    .week-cell.s2 { background: #5DCAA5; color: #04342C; }
+    .week-cell.s3 { background: #1D9E75; color: #04342C; }
+    .week-cell.s4 { background: #0F6E56; color: #E1F5EE; }
+    .week-cell.future { background: transparent; border: 0.5px solid var(--color-border); }
+    .add-row { margin-top: 10px; display: flex; gap: 6px; }
+    .add-input { flex: 1; font-size: 13px; padding: 6px 10px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--radius-md); background: var(--color-bg); color: var(--color-text); outline: none; }
+    .add-input:focus { border-color: var(--green); }
+    .add-btn { font-size: 13px; padding: 6px 12px; border-radius: var(--radius-md); border: 0.5px solid var(--color-border-secondary); background: transparent; color: var(--color-text); cursor: pointer; }
+    .add-btn:hover { background: var(--color-bg-secondary); }
+    .full-card { margin-bottom: 1.5rem; }
+
+    /* Google Calendar styles */
+    .gcal-connect-wrap { display: flex; flex-direction: column; align-items: center; padding: 1.5rem; gap: 10px; }
+    .gcal-connect-btn { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 8px 16px; border-radius: var(--radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-bg); color: var(--color-text); cursor: pointer; font-family: inherit; }
+    .gcal-connect-btn:hover { background: var(--color-bg-secondary); }
+    .gcal-hint { font-size: 11px; color: var(--color-text-tertiary); }
+    .gcal-user { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .gcal-user img { width: 20px; height: 20px; border-radius: 50%; }
+    .gcal-user span { font-size: 12px; color: var(--color-text-secondary); }
+    .gcal-signout { font-size: 11px; color: var(--color-text-tertiary); cursor: pointer; margin-left: auto; }
+    .gcal-signout:hover { color: var(--color-text); }
+    .gcal-loading { font-size: 13px; color: var(--color-text-tertiary); padding: 1rem 0; text-align: center; }
+    .gcal-error { font-size: 12px; color: var(--red-dark); padding: 8px 0; }
+    .event-row { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 0.5px solid var(--color-border); }
+    .event-row:last-child { border-bottom: none; }
+    .event-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+    .event-body { flex: 1; min-width: 0; }
+    .event-title { font-size: 13px; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .event-time { font-size: 11px; color: var(--color-text-tertiary); margin-top: 2px; }
+    .event-day-label { font-size: 11px; font-weight: 500; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 0 4px; }
+  </style>
+</head>
+<body>
+<div class="container">
+<div class="dashboard">
+  <div class="top-bar">
+    <h1>Life OS</h1>
+    <span class="date" id="today-date"></span>
+  </div>
+
+  <div class="section-label">Overview</div>
+  <div class="metric-row">
+    <div class="metric-card good">
+      <div class="label">Habit streak</div>
+      <div class="value" id="streak-val">0</div>
+      <div class="sub">days running</div>
+    </div>
+    <div class="metric-card" id="workout-card">
+      <div class="label">Workouts this week</div>
+      <div class="value" id="workout-val">0</div>
+      <div class="sub">target: 4</div>
+    </div>
+    <div class="metric-card" id="screen-card">
+      <div class="label">Screen time today</div>
+      <div class="value" id="screen-val">—</div>
+      <div class="sub">self-reported hrs</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Goals active</div>
+      <div class="value" id="goals-active-val">—</div>
+      <div class="sub">in progress</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card full-card" style="margin-bottom:0">
+      <div class="card-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Google Calendar
+        <span id="gcal-status-badge" style="margin-left:auto;font-size:11px;color:var(--color-text-tertiary)"></span>
+      </div>
+      <div id="gcal-content">
+        <div class="gcal-connect-wrap">
+          <button class="gcal-connect-btn" onclick="signInWithGoogle()">
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+            </svg>
+            Sign in with Google
+          </button>
+          <p class="gcal-hint">Pulls your upcoming events. Read-only access.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">✓ Daily habits</div>
+      <div id="habit-list"></div>
+      <div class="add-row">
+        <input class="add-input" id="new-habit-input" placeholder="Add habit..." onkeydown="if(event.key==='Enter')addHabit()" />
+        <button class="add-btn" onclick="addHabit()">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">⚡ Lift tracker</div>
+      <div id="lift-list"></div>
+      <div class="add-row" style="margin-top:10px">
+        <input class="add-input" id="new-lift-input" placeholder="Movement..." style="flex:1.5" />
+        <input class="add-input" id="new-lift-val" placeholder="e.g. 3×8 @ 40lb" style="flex:2" onkeydown="if(event.key==='Enter')addLift()" />
+        <button class="add-btn" onclick="addLift()">+</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📵 Screen time log</div>
+      <div class="screen-summary">
+        <div class="screen-box"><div class="sv" id="sc-today">—</div><div class="sl">today (hrs)</div></div>
+        <div class="screen-box"><div class="sv" id="sc-avg">—</div><div class="sl">7-day avg</div></div>
+        <div class="screen-box"><div class="sv" id="sc-best">—</div><div class="sl">best day</div></div>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar-label"><span>this week</span><span id="sc-week-label"></span></div>
+        <div id="sc-week-bars"></div>
+      </div>
+      <div class="add-row" style="margin-top:10px">
+        <input class="add-input" id="sc-input" type="number" min="0" max="16" step="0.5" placeholder="Log today's hrs (e.g. 2.5)" onkeydown="if(event.key==='Enter')logScreen()" />
+        <button class="add-btn" onclick="logScreen()">Log</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">📅 Workout heatmap</div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--color-text-tertiary);margin-bottom:6px">
+        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+      </div>
+      <div class="week-grid" id="heatmap-grid"></div>
+      <div style="margin-top:10px;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--color-text-tertiary)">
+        <span>less</span>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--color-bg-secondary)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:#9FE1CB"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:#1D9E75"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:#0F6E56"></div>
+        <span>more</span>
+        <span style="margin-left:auto;cursor:pointer;color:var(--color-text-secondary)" onclick="logWorkout()">+ log workout</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🎯 Goals & milestones</div>
+      <div id="goals-list"></div>
+      <div class="add-row">
+        <input class="add-input" id="new-goal-input" placeholder="Add goal..." style="flex:3" onkeydown="if(event.key==='Enter')addGoal()" />
+        <select class="add-input" id="new-goal-cat" style="flex:1;max-width:120px">
+          <option value="academic">Academic</option>
+          <option value="fitness">Fitness</option>
+          <option value="professional">Professional</option>
+          <option value="personal">Personal</option>
+        </select>
+        <button class="add-btn" onclick="addGoal()">+</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+const CLIENT_ID = '259203717761-agu40107heu3t9vnsdnppqfcqn8e9266.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
+const DAY_MS = 86400000;
+
+function today() { return new Date().toISOString().slice(0,10); }
+function fmt(d) { return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+
+let state = JSON.parse(localStorage.getItem('life_os_v1') || 'null') || {
+  habits:[
+    {id:1,name:'Train (home)',log:[]},
+    {id:2,name:'No doomscroll before noon',log:[]},
+    {id:3,name:'Skincare routine',log:[]},
+    {id:4,name:'Read 10 min',log:[]}
+  ],
+  lifts:[
+    {id:1,name:'Pull-ups',last:'3×8 BW',prev:'3×7 BW',delta:'up'},
+    {id:2,name:'Dips',last:'3×10 BW',prev:'3×10 BW',delta:'same'},
+    {id:3,name:'DB incline press',last:'3×8 @ 35lb',prev:'3×8 @ 30lb',delta:'up'},
+    {id:4,name:'DB row',last:'3×10 @ 45lb',prev:'3×8 @ 45lb',delta:'up'},
+    {id:5,name:'DB curl',last:'3×12 @ 20lb',prev:'3×12 @ 20lb',delta:'same'}
+  ],
+  screen:{},workouts:{},
+  goals:[
+    {id:1,title:"Make Dean's List — Fall '25",cat:'academic',status:'pending'},
+    {id:2,title:'Reach 170lb lean (cut ~10lb fat)',cat:'fitness',status:'active'},
+    {id:3,title:'Land research or internship by Dec',cat:'professional',status:'active'},
+    {id:4,title:'Consistent upper body program (8 wks)',cat:'fitness',status:'active'}
+  ],
+  nextId:10
+};
+
+let gcalToken = null;
+let gcalUser = null;
+
+function save() { localStorage.setItem('life_os_v1', JSON.stringify(state)); }
+
+function signInWithGoogle() {
+  if (typeof google === 'undefined') {
+    document.getElementById('gcal-content').innerHTML = '<p class="gcal-error">Google Identity Services not loaded yet. Wait a moment and try again.</p>';
+    return;
+  }
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (resp) => {
+      if (resp.error) {
+        document.getElementById('gcal-content').innerHTML = `<p class="gcal-error">Auth error: ${resp.error}</p><div class="gcal-connect-wrap"><button class="gcal-connect-btn" onclick="signInWithGoogle()">Try again</button></div>`;
+        return;
+      }
+      gcalToken = resp.access_token;
+      fetchCalendarUser();
+      fetchUpcomingEvents();
+    }
+  });
+  client.requestAccessToken();
+}
+
+function fetchCalendarUser() {
+  fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+    headers: { Authorization: 'Bearer ' + gcalToken }
+  }).then(r => r.json()).then(u => {
+    gcalUser = u;
+    const badge = document.getElementById('gcal-status-badge');
+    if (badge) badge.textContent = u.email || '';
+  });
+}
+
+function fetchUpcomingEvents() {
+  const content = document.getElementById('gcal-content');
+  content.innerHTML = '<p class="gcal-loading">Loading events...</p>';
+  const now = new Date().toISOString();
+  const end = new Date(Date.now() + 7 * DAY_MS).toISOString();
+  const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(now)}&timeMax=${encodeURIComponent(end)}&singleEvents=true&orderBy=startTime&maxResults=20`;
+  fetch(url, { headers: { Authorization: 'Bearer ' + gcalToken } })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) { content.innerHTML = `<p class="gcal-error">${data.error.message}</p>`; return; }
+      renderEvents(data.items || []);
+    })
+    .catch(() => { content.innerHTML = '<p class="gcal-error">Failed to load events.</p>'; });
+}
+
+function renderEvents(events) {
+  const content = document.getElementById('gcal-content');
+  const colors = ['#378ADD','#1D9E75','#BA7517','#D4537E','#7F77DD','#D85A30'];
+  const calColorMap = {};
+  let colorIdx = 0;
+
+  const grouped = {};
+  events.forEach(ev => {
+    const dateKey = (ev.start.dateTime || ev.start.date).slice(0,10);
+    if (!grouped[dateKey]) grouped[dateKey] = [];
+    grouped[dateKey].push(ev);
+  });
+
+  const todayKey = today();
+  const tomorrowKey = new Date(Date.now() + DAY_MS).toISOString().slice(0,10);
+
+  const html = Object.keys(grouped).sort().map(dateKey => {
+    let label;
+    if (dateKey === todayKey) label = 'Today';
+    else if (dateKey === tomorrowKey) label = 'Tomorrow';
+    else label = new Date(dateKey + 'T00:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+
+    const rows = grouped[dateKey].map(ev => {
+      const calId = ev.organizer?.email || 'default';
+      if (!calColorMap[calId]) { calColorMap[calId] = colors[colorIdx % colors.length]; colorIdx++; }
+      const timeStr = ev.start.date ? 'All day' : (() => {
+        const s = new Date(ev.start.dateTime), e = new Date(ev.end.dateTime);
+        const f = t => t.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+        return `${f(s)} – ${f(e)}`;
+      })();
+      return `<div class="event-row">
+        <div class="event-dot" style="background:${calColorMap[calId]}"></div>
+        <div class="event-body">
+          <div class="event-title">${ev.summary || '(No title)'}</div>
+          <div class="event-time">${timeStr}</div>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="event-day-label">${label}</div>${rows}`;
+  }).join('');
+
+  const userHtml = gcalUser ? `<div class="gcal-user">${gcalUser.picture ? `<img src="${gcalUser.picture}" alt="">` : ''}<span>${gcalUser.name || gcalUser.email}</span><span class="gcal-signout" onclick="signOut()">sign out</span></div>` : '';
+  content.innerHTML = userHtml + (html || '<p style="font-size:13px;color:var(--color-text-tertiary);padding:8px 0">No upcoming events in the next 7 days.</p>');
+}
+
+function signOut() {
+  gcalToken = null; gcalUser = null;
+  document.getElementById('gcal-status-badge').textContent = '';
+  document.getElementById('gcal-content').innerHTML = `<div class="gcal-connect-wrap"><button class="gcal-connect-btn" onclick="signInWithGoogle()"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Sign in with Google</button><p class="gcal-hint">Pulls your upcoming events. Read-only access.</p></div>`;
+}
+
+function render() {
+  const td = today();
+  document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  renderHabits(td); renderLifts(); renderScreen(td); renderHeatmap(td); renderGoals(); renderMetrics(td);
+}
+
+function renderHabits(td) {
+  const el = document.getElementById('habit-list');
+  if (!state.habits.length) { el.innerHTML = '<p style="font-size:13px;color:var(--color-text-tertiary);padding:8px 0">No habits yet.</p>'; return; }
+  el.innerHTML = state.habits.map(h => {
+    const last7 = Array.from({length:7},(_,i) => {
+      const d = new Date(Date.now()-(6-i)*DAY_MS).toISOString().slice(0,10);
+      const done = h.log.includes(d), isToday = d === td;
+      return `<div class="dot${isToday?(done?' done':' today'):(done?' done':' miss')}" title="${d}"></div>`;
+    }).join('');
+    const doneToday = h.log.includes(td), streak = calcStreak(h.log, td);
+    return `<div class="habit-row">
+      <div>
+        <div class="habit-name">${h.name}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+          <div class="dot-row">${last7}</div>
+          <span class="habit-streak">${streak}d streak</span>
+        </div>
+      </div>
+      <button class="log-btn${doneToday?' logged':''}" onclick="toggleHabit(${h.id})">${doneToday?'✓ done':'log'}</button>
+    </div>`;
+  }).join('');
+}
+
+function calcStreak(log, td) {
+  let s = 0, d = new Date(td);
+  while (true) { const ds = d.toISOString().slice(0,10); if (log.includes(ds)) { s++; d = new Date(d-DAY_MS); } else break; }
+  return s;
+}
+
+function toggleHabit(id) {
+  const td = today(), h = state.habits.find(x=>x.id===id); if (!h) return;
+  const i = h.log.indexOf(td); if (i>-1) h.log.splice(i,1); else h.log.push(td);
+  save(); render();
+}
+
+function addHabit() {
+  const inp = document.getElementById('new-habit-input'), v = inp.value.trim(); if (!v) return;
+  state.habits.push({id:state.nextId++,name:v,log:[]}); inp.value=''; save(); render();
+}
+
+function renderLifts() {
+  const el = document.getElementById('lift-list');
+  if (!state.lifts.length) { el.innerHTML = '<p style="font-size:13px;color:var(--color-text-tertiary);padding:8px 0">No lifts tracked yet.</p>'; return; }
+  el.innerHTML = state.lifts.map(l => `
+    <div class="lift-row">
+      <div class="lift-name">${l.name}</div>
+      <div class="lift-right">
+        <div class="lift-val">${l.last}</div>
+        <div class="lift-delta ${l.delta==='up'?'up':'same'}">${l.delta==='up'?'↑ PR':'—'}</div>
+      </div>
+    </div>`).join('');
+}
+
+function addLift() {
+  const ni = document.getElementById('new-lift-input'), vi = document.getElementById('new-lift-val');
+  const name = ni.value.trim(), val = vi.value.trim(); if (!name) return;
+  state.lifts.push({id:state.nextId++,name,last:val||'—',prev:'—',delta:'same'});
+  ni.value=''; vi.value=''; save(); render();
+}
+
+function renderScreen(td) {
+  const sc = state.screen, todayVal = sc[td];
+  document.getElementById('sc-today').textContent = todayVal != null ? todayVal+'h' : '—';
+  document.getElementById('sc-today').className = 'sv'+(todayVal==null?'':todayVal<=2?' good':todayVal<=4?'':' bad');
+  const vals = Object.values(sc).map(Number).filter(n=>!isNaN(n));
+  const avg = vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : '—';
+  const best = vals.length ? Math.min(...vals) : '—';
+  document.getElementById('sc-avg').textContent = avg !== '—' ? avg+'h' : '—';
+  document.getElementById('sc-best').textContent = best !== '—' ? best+'h' : '—';
+  document.getElementById('screen-val').textContent = todayVal != null ? todayVal+'h' : '—';
+  document.getElementById('screen-card').className = 'metric-card'+(todayVal==null?'':todayVal<=2?' good':todayVal<=4?' warn':' bad');
+  const days7 = Array.from({length:7},(_,i)=>new Date(Date.now()-(6-i)*DAY_MS).toISOString().slice(0,10));
+  document.getElementById('sc-week-bars').innerHTML = days7.map(d => {
+    const v = sc[d]; if (v==null) return '';
+    const pct = Math.min(100,(v/8)*100), cls = v<=2?'green':v<=4?'amber':'red';
+    return `<div class="bar-wrap"><div class="bar-label"><span>${fmt(d)}</span><span>${v}h</span></div><div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div></div>`;
+  }).join('');
+  document.getElementById('sc-week-label').textContent = vals.length ? `avg ${avg}h` : '';
+}
+
+function logScreen() {
+  const inp = document.getElementById('sc-input'), v = parseFloat(inp.value); if (isNaN(v)||v<0) return;
+  state.screen[today()] = v; inp.value=''; save(); render();
+}
+
+function renderHeatmap(td) {
+  const grid = document.getElementById('heatmap-grid');
+  const days28 = Array.from({length:28},(_,i)=>new Date(Date.now()-(27-i)*DAY_MS).toISOString().slice(0,10));
+  const future = Array.from({length:(7-(days28.length%7))%7},()=>null);
+  grid.innerHTML = [...days28,...future].map(d => {
+    if (!d) return `<div class="week-cell future"></div>`;
+    const v = state.workouts[d]||0, cls = v===0?'s0':v===1?'s2':v>=2?'s4':'s1', isT = d===td;
+    return `<div class="week-cell ${cls}" title="${d}: ${v} session(s)" onclick="logWorkoutDay('${d}')">${isT?'·':''}</div>`;
+  }).join('');
+}
+
+function logWorkout() { const td=today(); state.workouts[td]=(state.workouts[td]||0)+1; save(); render(); }
+function logWorkoutDay(d) { state.workouts[d]=((state.workouts[d]||0)+1)%4; save(); render(); }
+
+function renderGoals() {
+  const el = document.getElementById('goals-list');
+  if (!state.goals.length) { el.innerHTML = '<p style="font-size:13px;color:var(--color-text-tertiary);padding:8px 0">No goals yet.</p>'; return; }
+  const catIcon = {academic:'🎓',fitness:'💪',professional:'💼',personal:'👤'};
+  el.innerHTML = state.goals.map(g => `
+    <div class="goal-row">
+      <span style="font-size:16px;margin-top:1px">${catIcon[g.cat]||'🎯'}</span>
+      <div class="goal-body">
+        <div class="goal-title">${g.title}</div>
+        <div class="goal-meta">${g.cat}</div>
+      </div>
+      <span class="goal-status ${g.status}" onclick="cycleGoal(${g.id})">${g.status}</span>
+    </div>`).join('');
+  document.getElementById('goals-active-val').textContent = state.goals.filter(g=>g.status==='active').length;
+}
+
+function cycleGoal(id) {
+  const g = state.goals.find(x=>x.id===id); if (!g) return;
+  const seq = ['pending','active','done']; g.status = seq[(seq.indexOf(g.status)+1)%seq.length];
+  save(); render();
+}
+
+function addGoal() {
+  const ti = document.getElementById('new-goal-input'), ci = document.getElementById('new-goal-cat');
+  const t = ti.value.trim(); if (!t) return;
+  state.goals.push({id:state.nextId++,title:t,cat:ci.value,status:'active'}); ti.value=''; save(); render();
+}
+
+function renderMetrics(td) {
+  const allStreaks = state.habits.map(h=>calcStreak(h.log,td));
+  document.getElementById('streak-val').textContent = allStreaks.length ? Math.max(...allStreaks) : 0;
+  const mon = new Date(); mon.setDate(mon.getDate()-mon.getDay());
+  let wCount = 0;
+  for (let i=0;i<7;i++) { const d=new Date(mon); d.setDate(d.getDate()+i); wCount+=(state.workouts[d.toISOString().slice(0,10)]||0)>0?1:0; }
+  document.getElementById('workout-val').textContent = wCount;
+  document.getElementById('workout-card').className = 'metric-card'+(wCount>=4?' good':wCount>=2?'':' warn');
+}
+
+render();
+</script>
+</body>
+</html>
