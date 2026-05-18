@@ -134,12 +134,24 @@
     .event-title { font-size: 13px; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .event-time { font-size: 11px; color: var(--color-text-tertiary); margin-top: 2px; }
     .event-day-label { font-size: 11px; font-weight: 500; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 0 4px; }
+
+    /* TABS — added */
+    .tabs { display:flex; gap:2px; margin-bottom:1.5rem; border-bottom:1px solid var(--color-border); }
+    .tab { font-size:13px; padding:8px 16px; cursor:pointer; color:var(--color-text-secondary); border:none; background:none; border-bottom:2px solid transparent; margin-bottom:-1px; font-family:inherit; }
+    .tab:hover { color:var(--color-text); }
+    .tab.active { color:var(--color-text); font-weight:500; border-bottom-color:var(--color-text); }
+    .pane { display:none; }
+    .pane.active { display:block; }
   </style>
 </head>
 <body>
 <div class="container">
 <div class="dashboard">
   <div class="top-bar">
+    <div class="tabs">
+  <button class="tab active" onclick="showTab('home')">Home</button>
+  <button class="tab" onclick="showTab('fitness')">Fitness</button>
+</div>
     <h1>Life OS</h1>
     <span class="date" id="today-date"></span>
   </div>
@@ -269,7 +281,8 @@
 
 </div>
 </div>
-
+  <!-- HOME PANE — wrap your existing content -->
+<div class="pane active" id="pane-home">
 <script>
 const CLIENT_ID = '259203717761-agu40107heu3t9vnsdnppqfcqn8e9266.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
