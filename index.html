@@ -723,7 +723,85 @@ logBtn.addEventListener('click', function() {
   setsContainer.innerHTML = ''
 
   alert(`Logged: ${movement} — ${sets.length} sets`)
+  populateChartDropdown()
 })
+  // --- CHART FUNCTIONS ---
+function getChartData(movementName) {
+  const sessions = JSON.parse(localStorage.getItem('workout-sessions') || '[]')
+  const filtered = sessions.filter(session => session.movement === movementName)
+  const dataPoints = filtered.map(session => {
+    const totalReps = session.sets.reduce((sum, set) => sum + set.reps, 0)
+    return {
+      date: session.date,
+      reps: totalReps
+    }
+  })
+  return dataPoints
+}
+
+let chartInstance = null
+
+function renderChart(movementName) {
+  const dataPoints = getChartData(movementName)
+  const labels = dataPoints.map(point => point.date)
+  const data = dataPoints.map(point => point.reps)
+  const canvas = document.getElementById('progress-chart')
+  const noDataMsg = document.getElementById('no-data-msg')
+
+  if (dataPoints.length === 0) {
+    canvas.style.display = 'none'
+    noDataMsg.style.display = 'block'
+    return
+  }
+
+  canvas.style.display = 'block'
+  noDataMsg.style.display = 'none'
+
+  if (chartInstance) chartInstance.destroy()
+
+  const ctx = canvas.getContext('2d')
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: movementName,
+        data: data,
+        borderColor: '#1D9E75',
+        backgroundColor: 'rgba(29,158,117,0.1)',
+        tension: 0.3,
+        pointRadius: 5
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: false, title: { display: true, text: 'Total Reps' } },
+        x: { title: { display: true, text: 'Date' } }
+      }
+    }
+  })
+}
+
+function populateChartDropdown() {
+  const sessions = JSON.parse(localStorage.getItem('workout-sessions') || '[]')
+  const movements = [...new Set(sessions.map(s => s.movement))]
+  const select = document.getElementById('chart-movement-select')
+  select.innerHTML = '<option value="">-- select movement --</option>'
+  movements.forEach(function(movement) {
+    const option = document.createElement('option')
+    option.value = movement
+    option.textContent = movement
+    select.appendChild(option)
+  })
+}
+
+document.getElementById('chart-movement-select').addEventListener('change', function() {
+  if (this.value) renderChart(this.value)
+})
+
+populateChartDropdown()
 </script>
 </body>
 </html>
