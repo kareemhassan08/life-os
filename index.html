@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Life OS</title>
   <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
       --gap: 12px;
@@ -287,6 +288,25 @@
 <div class="pane" id="pane-fitness">
   <h2 style="font-size:15px;font-weight:500;margin-bottom:1rem">Workout Logger</h2>
 
+  <div class="card" style="margin-top:1rem">
+  <div class="card-title">📈 Progress</div>
+  
+  <!-- filter by movement -->
+  <select id="chart-movement-select" class="add-input" 
+          style="margin-bottom:1rem;display:block;width:100%">
+    <option value="">-- select movement --</option>
+  </select>
+  
+  <!-- chart renders here -->
+  <canvas id="progress-chart"></canvas>
+  
+  <p id="no-data-msg" style="font-size:13px;
+     color:var(--color-text-tertiary);text-align:center;
+     padding:1rem 0;display:none">
+    No data yet for this movement.
+  </p>
+</div>
+  
   <div class="card">
     <div class="card-title">⚡ Log Exercise</div>
 
