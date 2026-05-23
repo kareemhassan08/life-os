@@ -6,11 +6,7 @@
 <title>Life OS</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- =====================================================================
-     STYLES — all visual rules live here, organised into labelled sections
-===================================================================== -->
 <style>
-
 /* ── 1. DESIGN TOKENS ─────────────────────────────────────────────── */
 :root {
   --gap: 12px;
@@ -125,6 +121,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
 .mslbl { font-size: 10px; color: var(--text3); text-align: center; margin-bottom: 4px; text-transform: uppercase; }
 .muscle-info { margin-top: 10px; padding: 12px; background: var(--bg); border-radius: var(--r); min-height: 80px; border: 1px solid var(--border); }
+.muscle-info .mi-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.muscle-info .mi-hint { font-size: 11px; color: var(--text3); font-style: italic; }
 
 .mpart { cursor: pointer; transition: all 0.3s ease; fill: #cbd5e0; }
 .mpart.v-low  { fill: #9fe1cb; }
@@ -134,6 +132,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .mpart:hover { filter: brightness(0.9); stroke: #fff; stroke-width: 0.5px; }
 .mpart.highlight { fill: var(--am) !important; opacity: 1; stroke: #fff; stroke-width: 1px; }
 .mpart.dim { opacity: 0.3; }
+
 .set-row { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
 .set-lbl { font-size: 11px; color: var(--text2); min-width: 38px; }
 .sess-item { padding: 9px 0; border-bottom: .5px solid var(--border); }
@@ -170,7 +169,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 /* ── 14. MISC ─────────────────────────────────────────────────────── */
 .badge { font-size: 10px; padding: 2px 7px; border-radius: 20px; background: var(--bg); color: var(--text2); border: .5px solid var(--border); }
 .empty-state { font-size: 12px; color: var(--text3); padding: 8px 0; }
-
 </style>
 </head>
 <body>
@@ -187,7 +185,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <button class="tab" onclick="showTab('nutrition')">Nutrition</button>
   </div>
 
-  <!-- HOME -->
   <div class="pane active" id="pane-home">
     <div class="slbl">Overview</div>
     <div class="mrow">
@@ -239,9 +236,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
           <input class="ainp" id="sc-yt-input" type="number" min="0" max="16" step="0.5" placeholder="YouTube hrs today" onkeydown="if(event.key==='Enter')logYouTube()"/>
           <button class="abtn" style="color:var(--rd);border-color:var(--rd)" onclick="logYouTube()">Log YT</button>
         </div>
-        <p style="font-size:10px;color:var(--text3);margin-top:8px;line-height:1.5">
-          For auto YouTube tracking, see the note on the Fitness tab.
-        </p>
       </div>
       <div class="card">
         <div class="ctitle">📅 Workout heatmap</div>
@@ -262,678 +256,43 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     </div>
   </div>
 
-  <!-- FITNESS -->
   <div class="pane" id="pane-fitness">
     <div class="fit-grid">
-      <!-- Muscle map -->
       <div class="card" style="margin-bottom:0">
         <div class="ctitle">💪 Muscle map <span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:auto">tap a muscle</span></div>
         <div class="muscle-wrap">
-          <!-- FRONT -->
-         <div class="muscle-wrap">
-  <div>
-    <div class="mslbl">Front</div>
-    <svg class="muscle-svg" viewBox="0 0 120 280" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="60" cy="22" rx="16" ry="18" fill="#c8c8c8" opacity=".35"/>
-      <rect x="54" y="38" width="12" height="12" rx="3" fill="#c8c8c8" opacity=".35"/>
-      <g class="mpart" id="m-chest-l" onclick="selectMuscle('chest')"><ellipse cx="48" cy="64" rx="13" ry="11"/></g>
-      <g class="mpart" id="m-chest-r" onclick="selectMuscle('chest')"><ellipse cx="72" cy="64" rx="13" ry="11"/></g>
-      <g class="mpart" id="m-fdelt-l" onclick="selectMuscle('shoulders')"><ellipse cx="33" cy="58" rx="9" ry="10"/></g>
-      <g class="mpart" id="m-fdelt-r" onclick="selectMuscle('shoulders')"><ellipse cx="87" cy="58" rx="9" ry="10"/></g>
-      <g class="mpart" id="m-abs" onclick="selectMuscle('abs')"><rect x="50" y="80" width="20" height="34" rx="5"/></g>
-      <g class="mpart" id="m-obl-l" onclick="selectMuscle('abs')"><ellipse cx="44" cy="93" rx="7" ry="14"/></g>
-      <g class="mpart" id="m-obl-r" onclick="selectMuscle('abs')"><ellipse cx="76" cy="93" rx="7" ry="14"/></g>
-      <g class="mpart" id="m-bic-l" onclick="selectMuscle('biceps')"><ellipse cx="29" cy="85" rx="7" ry="16"/></g>
-      <g class="mpart" id="m-bic-r" onclick="selectMuscle('biceps')"><ellipse cx="91" cy="85" rx="7" ry="16"/></g>
-      <g class="mpart" id="m-quad-l" onclick="selectMuscle('quads')"><ellipse cx="48" cy="172" rx="13" ry="30"/></g>
-      <g class="mpart" id="m-quad-r" onclick="selectMuscle('quads')"><ellipse cx="72" cy="172" rx="13" ry="30"/></g>
-    </svg>
-  </div>
-  <div>
-    <div class="mslbl">Side</div>
-    <svg class="muscle-svg" viewBox="0 0 120 280" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="60" cy="22" rx="14" ry="18" fill="#c8c8c8" opacity=".35"/>
-      <g class="mpart" id="m-sdelt-s" onclick="selectMuscle('shoulders')"><ellipse cx="60" cy="58" rx="10" ry="12"/></g>
-      <g class="mpart" id="m-lat-s" onclick="selectMuscle('lats')"><ellipse cx="55" cy="90" rx="10" ry="25" transform="rotate(-10 55 90)"/></g>
-      <g class="mpart" id="m-tri-s" onclick="selectMuscle('triceps')"><ellipse cx="48" cy="85" rx="6" ry="16"/></g>
-      <g class="mpart" id="m-bic-s" onclick="selectMuscle('biceps')"><ellipse cx="72" cy="85" rx="5" ry="14"/></g>
-      <g class="mpart" id="m-obl-s" onclick="selectMuscle('abs')"><ellipse cx="65" cy="100" rx="6" ry="18"/></g>
-      <g class="mpart" id="m-glute-s" onclick="selectMuscle('glutes')"><ellipse cx="50" cy="140" rx="15" ry="18"/></g>
-      <g class="mpart" id="m-quad-s" onclick="selectMuscle('quads')"><ellipse cx="70" cy="180" rx="12" ry="35"/></g>
-      <g class="mpart" id="m-ham-s" onclick="selectMuscle('hamstrings')"><ellipse cx="48" cy="180" rx="10" ry="32"/></g>
-    </svg>
-  </div>
-  <div>
-    <div class="mslbl">Back</div>
-    <svg class="muscle-svg" viewBox="0 0 120 280" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="60" cy="22" rx="16" ry="18" fill="#c8c8c8" opacity=".35"/>
-      <g class="mpart" id="m-trap" onclick="selectMuscle('traps')"><polygon points="60,40 36,62 84,62"/></g>
-      <g class="mpart" id="m-rdelt-l" onclick="selectMuscle('reardelts')"><ellipse cx="33" cy="60" rx="9" ry="9"/></g>
-      <g class="mpart" id="m-rdelt-r" onclick="selectMuscle('reardelts')"><ellipse cx="87" cy="60" rx="9" ry="9"/></g>
-      <g class="mpart" id="m-lat-l" onclick="selectMuscle('lats')"><ellipse cx="44" cy="84" rx="13" ry="20"/></g>
-      <g class="mpart" id="m-lat-r" onclick="selectMuscle('lats')"><ellipse cx="76" cy="84" rx="13" ry="20"/></g>
-      <g class="mpart" id="m-tri-l" onclick="selectMuscle('triceps')"><ellipse cx="29" cy="83" rx="7" ry="16"/></g>
-      <g class="mpart" id="m-tri-r" onclick="selectMuscle('triceps')"><ellipse cx="91" cy="83" rx="7" ry="16"/></g>
-      <g class="mpart" id="m-glute-l" onclick="selectMuscle('glutes')"><ellipse cx="49" cy="130" rx="14" ry="14"/></g>
-      <g class="mpart" id="m-glute-r" onclick="selectMuscle('glutes')"><ellipse cx="71" cy="130" rx="14" ry="14"/></g>
-      <g class="mpart" id="m-ham-l" onclick="selectMuscle('hamstrings')"><ellipse cx="49" cy="178" rx="13" ry="28"/></g>
-      <g class="mpart" id="m-ham-r" onclick="selectMuscle('hamstrings')"><ellipse cx="71" cy="178" rx="13" ry="28"/></g>
-    </svg>
-  </div>
-</div>
-        <div class="muscle-info" id="muscle-info">
-          <div class="mi-hint">Tap a muscle to see relevant exercises</div>
-        </div>
-      </div>
-
-      <!-- Logger -->
-      <div class="card" style="margin-bottom:0">
-        <div class="ctitle">⚡ Log exercise</div>
-        <div style="margin-bottom:10px">
-          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Muscle group</label>
-          <select id="muscle-select" class="ainp" style="width:100%" onchange="onMuscleGroupChange()">
-            <option value="">— select —</option>
-            <option value="push">Push</option><option value="pull">Pull</option>
-            <option value="core">Core</option><option value="lower">Lower</option>
-            <option value="flexibility">Flexibility</option>
-          </select>
-        </div>
-        <div style="margin-bottom:10px">
-          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Movement</label>
-          <select id="movement-select" class="ainp" style="width:100%"><option value="">— select muscle group first —</option></select>
-        </div>
-        <div style="margin-bottom:10px">
-          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Number of sets</label>
-          <input type="number" id="sets-input" class="ainp" min="1" max="10" placeholder="e.g. 3" style="width:100%" oninput="buildSetRows()"/>
-        </div>
-        <div id="sets-container"></div>
-        <div style="margin-bottom:10px">
-          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Notes (optional)</label>
-          <input type="text" id="session-notes" class="ainp" placeholder="e.g. paused reps, slow eccentric…" style="width:100%"/>
-        </div>
-        <button class="abtn primary" onclick="logExercise()" style="width:100%;padding:9px">Log exercise</button>
-
-        <div style="margin-top:14px;padding:10px;background:var(--bg);border-radius:var(--r)">
-          <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:5px">📺 YouTube auto-tracking</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.65">
-            Browsers block local files from receiving external connections, so your extension can't POST data here directly. Two real options:<br><br>
-            <strong>Option A (now):</strong> Log YouTube manually via the Screen Time card — check your extension dashboard, type the number.<br><br>
-            <strong>Option B (project):</strong> Run a tiny Node.js server (~20 lines) locally. Your extension POSTs to it; this page reads from it via <code style="font-size:10px;background:var(--border);padding:1px 4px;border-radius:3px">fetch()</code>. Good first backend project — ask me when ready.
+          <div>
+            <div class="mslbl">Front</div>
+            <svg class="muscle-svg" viewBox="0 0 120 280" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="60" cy="22" rx="16" ry="18" fill="#c8c8c8" opacity=".35"/>
+              <rect x="54" y="38" width="12" height="12" rx="3" fill="#c8c8c8" opacity=".35"/>
+              <g class="mpart" id="m-chest-l" onclick="selectMuscle('chest')"><ellipse cx="48" cy="64" rx="13" ry="11"/></g>
+              <g class="mpart" id="m-chest-r" onclick="selectMuscle('chest')"><ellipse cx="72" cy="64" rx="13" ry="11"/></g>
+              <g class="mpart" id="m-fdelt-l" onclick="selectMuscle('shoulders')"><ellipse cx="33" cy="58" rx="9" ry="10"/></g>
+              <g class="mpart" id="m-fdelt-r" onclick="selectMuscle('shoulders')"><ellipse cx="87" cy="58" rx="9" ry="10"/></g>
+              <g class="mpart" id="m-abs" onclick="selectMuscle('abs')"><rect x="50" y="80" width="20" height="34" rx="5"/></g>
+              <g class="mpart" id="m-obl-l" onclick="selectMuscle('abs')"><ellipse cx="44" cy="93" rx="7" ry="14"/></g>
+              <g class="mpart" id="m-obl-r" onclick="selectMuscle('abs')"><ellipse cx="76" cy="93" rx="7" ry="14"/></g>
+              <g class="mpart" id="m-bic-l" onclick="selectMuscle('biceps')"><ellipse cx="29" cy="85" rx="7" ry="16"/></g>
+              <g class="mpart" id="m-bic-r" onclick="selectMuscle('biceps')"><ellipse cx="91" cy="85" rx="7" ry="16"/></g>
+              <g class="mpart" id="m-quad-l" onclick="selectMuscle('quads')"><ellipse cx="48" cy="172" rx="13" ry="30"/></g>
+              <g class="mpart" id="m-quad-r" onclick="selectMuscle('quads')"><ellipse cx="72" cy="172" rx="13" ry="30"/></g>
+            </svg>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="twocol">
-      <div class="card">
-        <div class="ctitle" style="justify-content:space-between">
-          <span>📋 Session log</span>
-          <span id="session-count" style="font-size:11px;color:var(--text3)"></span>
-        </div>
-        <div id="session-log-list"><p class="empty-state">No sessions logged yet.</p></div>
-      </div>
-      <div class="card">
-        <div class="ctitle">📈 Progress</div>
-        <select id="chart-movement-select" class="ainp" style="width:100%;margin-bottom:12px" onchange="renderChart(this.value)">
-          <option value="">— select movement —</option>
-        </select>
-        <canvas id="progress-chart" style="display:none"></canvas>
-        <p id="no-data-msg" style="font-size:12px;color:var(--text3);text-align:center;padding:1rem 0;display:none">No data for this movement yet.</p>
-        <p id="chart-hint"  style="font-size:12px;color:var(--text3);text-align:center;padding:1rem 0">Select a movement to see progress.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- NUTRITION -->
-  <div class="pane" id="pane-nutrition">
-    <div class="slbl">Today's macros</div>
-    <div class="macro-row">
-      <div class="macro-card"><div class="mv" id="mac-cal">—</div><div class="ml">Calories</div><div class="mt" id="mac-cal-t">target: 2400</div><div class="mbar"><div class="mbar-fill" id="mbar-cal" style="background:var(--am);width:0%"></div></div></div>
-      <div class="macro-card"><div class="mv" id="mac-pro">—</div><div class="ml">Protein (g)</div><div class="mt" id="mac-pro-t">target: 180g</div><div class="mbar"><div class="mbar-fill" id="mbar-pro" style="background:var(--g);width:0%"></div></div></div>
-      <div class="macro-card"><div class="mv" id="mac-carb">—</div><div class="ml">Carbs (g)</div><div class="mt">target: 220g</div><div class="mbar"><div class="mbar-fill" id="mbar-carb" style="background:#378ADD;width:0%"></div></div></div>
-      <div class="macro-card"><div class="mv" id="mac-fat">—</div><div class="ml">Fat (g)</div><div class="mt">target: 70g</div><div class="mbar"><div class="mbar-fill" id="mbar-fat" style="background:#D4537E;width:0%"></div></div></div>
-    </div>
-    <div class="twocol">
-      <div class="card">
-        <div class="ctitle" style="justify-content:space-between">
-          <span>🍽 Meals today</span>
-          <button class="abtn" onclick="openMealModal()" style="font-size:11px;padding:3px 9px">+ add meal</button>
-        </div>
-        <div id="meal-list"><p class="empty-state">No meals logged today.</p></div>
-      </div>
-      <div class="card">
-        <div class="ctitle">📊 Calories this week</div>
-        <canvas id="cal-chart" height="160"></canvas>
-      </div>
-    </div>
-    <div class="card" style="margin-top:var(--gap)">
-      <div class="ctitle">⚙️ Macro targets</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px">
-        <div><label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">Calories</label><input type="number" class="ainp" id="t-cal" placeholder="2400" style="width:100%" onchange="saveTargets()"/></div>
-        <div><label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">Protein (g)</label><input type="number" class="ainp" id="t-pro" placeholder="180" style="width:100%" onchange="saveTargets()"/></div>
-        <div><label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">Carbs (g)</label><input type="number" class="ainp" id="t-carb" placeholder="220" style="width:100%" onchange="saveTargets()"/></div>
-        <div><label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">Fat (g)</label><input type="number" class="ainp" id="t-fat" placeholder="70" style="width:100%" onchange="saveTargets()"/></div>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- MEAL MODAL -->
-<div class="modal-bg" id="meal-modal">
-  <div class="modal">
-    <h3>Add meal / food</h3>
-    <div class="frow"><label>Name</label><input type="text" id="m-name" class="ainp" placeholder="e.g. Chicken + rice" style="width:100%"/></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div class="frow"><label>Calories</label><input type="number" id="m-cal" class="ainp" placeholder="500" style="width:100%"/></div>
-      <div class="frow"><label>Protein (g)</label><input type="number" id="m-pro" class="ainp" placeholder="40" style="width:100%"/></div>
-      <div class="frow"><label>Carbs (g)</label><input type="number" id="m-carb" class="ainp" placeholder="60" style="width:100%"/></div>
-      <div class="frow"><label>Fat (g)</label><input type="number" id="m-fat" class="ainp" placeholder="15" style="width:100%"/></div>
-    </div>
-    <div class="modal-btns">
-      <button class="abtn" onclick="closeMealModal()">Cancel</button>
-      <button class="abtn primary" onclick="addMeal()">Add</button>
-    </div>
-  </div>
-</div>
-
-<!-- =====================================================================
-     JAVASCRIPT — all logic lives here, after the HTML
-     Sections: 1.Constants  2.Tabs  3.Home render  4.Habits  5.Goals
-               6.Screen time  7.Heatmap  8.Metrics  9.Muscle diagram
-               10.Exercise logger  11.Session log  12.Progress chart
-               13.Nutrition  14.Init
-===================================================================== -->
-<script>
-
-// ── 1. CONSTANTS & DATA ───────────────────────────────────────────────
-
-const DAY_MS = 86400000;
-const today  = () => new Date().toISOString().slice(0, 10);
-const fmt    = d  => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-const MOVEMENTS = {
-  push:        ['Incline DB press','Flat DB press','Dips','DB Skull Crusher','DB Overhead Tricep Extension','Tricep Push-ups','DB Front Raise','DB Lateral Raise','DB Overhead Press','DB Floor Press', 'DB Chest Fly'],
-  pull:        ['Pull-ups','Chin-ups','DB row (single arm)','DB chest-supported row','DB face pull','DB hammer curl','DB incline bicep curl','DB Zottman curl','Inverted row'],
-  core:        ['Hanging Knee Raise','Hanging Leg Raise','V-ups','DB Russian Twist','Plank','Ab wheel rollout','Hollow body hold'],
-  lower:       ['DB Romanian Deadlift','Pistol Squat','DB Explosive Split Squat','DB Bulgarian split squat','DB Goblet squat','DB / One Leg Calf Raise','Step-ups','Nordic curl'],
-  flexibility: ['Head Through Knees','Full split','Chest to Floor','Jefferson curl','Shoulder dislocates','Couch stretch','Pigeon pose']
-};
-
-const MUSCLE_MAP = {
-  chest:      { ids: ['m-chest-l','m-chest-r'],                               label: 'Chest (pectorals)',       moves: ['Incline DB press','Flat DB press','Dips','DB Floor Press','Tricep Push-ups', 'DB Chest Fly'] },
-  shoulders:  { ids: ['m-fdelt-l','m-fdelt-r','m-sdelt-s'],                   label: 'Shoulders',               moves: ['DB Overhead Press','DB Front Raise','DB Lateral Raise','Incline DB press'] },
-  reardelts:  { ids: ['m-rdelt-l','m-rdelt-r'],                               label: 'Rear delts',              moves: ['DB face pull','DB chest-supported row','DB row (single arm)'] },
-  traps:      { ids: ['m-trap'],                                              label: 'Trapezius',               moves: ['DB face pull','DB chest-supported row','Pull-ups','Inverted row'] },
-  lats:       { ids: ['m-lat-l','m-lat-r','m-lat-s'],                         label: 'Lats',                    moves: ['Pull-ups','Chin-ups','DB row (single arm)','Inverted row'] },
-  biceps:     { ids: ['m-bic-l','m-bic-r','m-bic-s'],                         label: 'Biceps',                  moves: ['Chin-ups','DB hammer curl','DB incline bicep curl','DB Zottman curl'] },
-  triceps:    { ids: ['m-tri-l','m-tri-r','m-tri-s'],                         label: 'Triceps',                 moves: ['Dips','DB Skull Crusher','DB Overhead Tricep Extension','Tricep Push-ups'] },
-  abs:        { ids: ['m-abs','m-obl-l','m-obl-r','m-obl-s'],                 label: 'Core / Abs',              moves: ['Hanging Knee Raise','Hanging Leg Raise','V-ups','DB Russian Twist','Ab wheel rollout','Hollow body hold'] },
-  lowerback:  { ids: ['m-lb'],                                                label: 'Lower back / Erectors',   moves: ['DB Romanian Deadlift','Jefferson curl'] },
-  quads:      { ids: ['m-quad-l','m-quad-r','m-quad-s'],                     label: 'Quadriceps',              moves: ['Pistol Squat','DB Explosive Split Squat','DB Bulgarian split squat','DB Goblet squat','Step-ups'] },
-  hamstrings: { ids: ['m-ham-l','m-ham-r','m-ham-s'],                         label: 'Hamstrings',              moves: ['DB Romanian Deadlift','Nordic curl','DB Bulgarian split squat'] },
-  glutes:     { ids: ['m-glute-l','m-glute-r','m-glute-s'],                   label: 'Glutes',                  moves: ['DB Romanian Deadlift','DB Explosive Split Squat','DB Bulgarian split squat','Step-ups'] },
-  calves:     { ids: ['m-calf-fl','m-calf-fr','m-calf-bl','m-calf-br'],       label: 'Calves',                  moves: ['DB / One Leg Calf Raise'] },
-  forearms:   { ids: ['m-fore-fl','m-fore-fr','m-fore-bl','m-fore-br'],       label: 'Forearms',                moves: ['DB Zottman curl','Pull-ups','DB row (single arm)'] }
-};
-
-const GROUP_COLORS = { push:'#E1F5EE', pull:'#E6F1FB', core:'#FAEEDA', lower:'#FAECE7', flexibility:'#FBEAF0' };
-const GROUP_TEXT   = { push:'#0F6E56', pull:'#185FA5', core:'#854F0B', lower:'#993C1D', flexibility:'#993556' };
-const CAT_ICON     = { academic:'🎓', fitness:'💪', professional:'💼', personal:'👤' };
-
-// Main persisted state
-let state = JSON.parse(localStorage.getItem('life_os_v2') || 'null') || {
-  habits: [
-    { id:1, name:'Train (home)',              log:[] },
-    { id:2, name:'No doomscroll before noon', log:[] },
-    { id:3, name:'Skincare routine',          log:[] },
-    { id:4, name:'Read 10 min',               log:[] }
-  ],
-  screen: {},    // "YYYY-MM-DD" -> { total: number|null, yt: number|null }
-  workouts: {},  // "YYYY-MM-DD" -> count
-  goals: [
-    { id:1, title:"Make Dean's List — Fall '25",          cat:'academic',     status:'pending' },
-    { id:2, title:'Reach 170lb lean (cut ~10lb fat)',     cat:'fitness',      status:'active'  },
-    { id:3, title:'Land research or internship by Dec',   cat:'professional', status:'active'  },
-    { id:4, title:'Consistent upper body program (8wks)', cat:'fitness',      status:'active'  }
-  ],
-  nutrition: { meals:{}, targets:{ cal:2400, pro:180, carb:220, fat:70 } },
-  nextId: 10
-};
-
-const getSessions  = ()    => JSON.parse(localStorage.getItem('workout-sessions') || '[]');
-const saveSessions = arr   => localStorage.setItem('workout-sessions', JSON.stringify(arr));
-const save         = ()    => localStorage.setItem('life_os_v2', JSON.stringify(state));
-
-
-// ── 2. TABS ───────────────────────────────────────────────────────────
-
-function showTab(t) {
-  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
-  document.querySelector(`.tab[onclick="showTab('${t}')"]`).classList.add('active');
-  document.getElementById('pane-' + t).classList.add('active');
-  if (t === 'fitness')   { renderSessionLog(); populateChartDropdown(); }
-  if (t === 'nutrition') { renderNutrition(); }
-}
-
-
-// ── 3. HOME RENDER ────────────────────────────────────────────────────
-
-function render() {
-  const td = today();
-  document.getElementById('today-date').textContent =
-    new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
-  renderHabits(td); renderGoals(); renderScreen(td); renderHeatmap(td); renderMetrics(td);
-     updateMuscleHeatmap();
-}
-function updateMuscleHeatmap() {
-  const sessions = getSessions();
-  const muscleVolume = {};
-  const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-  
-  sessions.forEach(s => {
-    if (s.ts < sevenDaysAgo) return;
-    for (const [key, info] of Object.entries(MUSCLE_MAP)) {
-      if (info.moves.includes(s.movement)) {
-        muscleVolume[key] = (muscleVolume[key] || 0) + s.sets.length;
-      }
-    }
-  });
-
-  for (const [key, info] of Object.entries(MUSCLE_MAP)) {
-    const vol = muscleVolume[key] || 0;
-    let cls = (vol > 12) ? 'v-high' : (vol > 6) ? 'v-mid' : (vol > 0) ? 'v-low' : '';
-    info.ids.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.classList.remove('v-low', 'v-mid', 'v-high');
-        if (cls) el.classList.add(cls);
-      }
-    });
-  }
-}     
-}
-
-
-// ── 4. HABITS ─────────────────────────────────────────────────────────
-
-function renderHabits(td) {
-  const el = document.getElementById('habit-list');
-  if (!state.habits.length) { el.innerHTML = '<p class="empty-state">No habits yet.</p>'; return; }
-  el.innerHTML = state.habits.map(h => {
-    const dots = Array.from({ length:7 }, (_, i) => {
-      const d   = new Date(Date.now() - (6-i)*DAY_MS).toISOString().slice(0,10);
-      const cls = d===td ? (h.log.includes(d)?'done':'today') : (h.log.includes(d)?'done':'miss');
-      return `<div class="dot ${cls}" title="${d}"></div>`;
-    }).join('');
-    const doneToday = h.log.includes(td);
-    return `<div class="hrow">
-      <div>
-        <div class="hname">${h.name}</div>
-        <div style="display:flex;align-items:center;gap:5px;margin-top:3px">
-          <div class="drow">${dots}</div>
-          <span class="hstrk">${calcStreak(h.log,td)}d</span>
-        </div>
-      </div>
-      <div class="hrow-actions">
-        <button class="logbtn ${doneToday?'logged':''}" onclick="toggleHabit(${h.id})">${doneToday?'✓':'log'}</button>
-        <button class="delbtn" onclick="deleteHabit(${h.id})" title="Remove">✕</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function calcStreak(log, td) {
-  // Count consecutive days backwards from td where the habit was completed
-  let streak = 0, d = new Date(td);
-  while (log.includes(d.toISOString().slice(0,10))) { streak++; d = new Date(d - DAY_MS); }
-  return streak;
-}
-
-function toggleHabit(id) {
-  const h  = state.habits.find(x => x.id===id); if (!h) return;
-  const td = today(), i = h.log.indexOf(td);
-  i > -1 ? h.log.splice(i,1) : h.log.push(td);
-  save(); render();
-}
-
-function addHabit() {
-  const inp = document.getElementById('new-habit-input'), v = inp.value.trim(); if (!v) return;
-  state.habits.push({ id:state.nextId++, name:v, log:[] }); inp.value=''; save(); render();
-}
-
-function deleteHabit(id) {
-  if (!confirm('Remove this habit?')) return;
-  state.habits = state.habits.filter(h => h.id !== id); save(); render();
-}
-
-
-// ── 5. GOALS ──────────────────────────────────────────────────────────
-
-function renderGoals() {
-  const el = document.getElementById('goals-list');
-  if (!state.goals.length) { el.innerHTML = '<p class="empty-state">No goals yet.</p>'; return; }
-  el.innerHTML = state.goals.map(g => `
-    <div class="grow">
-      <span style="font-size:15px;margin-top:1px">${CAT_ICON[g.cat]||'🎯'}</span>
-      <div class="gbody"><div class="gtitle">${g.title}</div><div class="gmeta">${g.cat}</div></div>
-      <div class="grow-actions">
-        <button class="gstat ${g.status}" onclick="cycleGoal(${g.id})">${g.status}</button>
-        <button class="delbtn" onclick="deleteGoal(${g.id})" title="Remove">✕</button>
-      </div>
-    </div>`).join('');
-  document.getElementById('goals-active-val').textContent = state.goals.filter(g=>g.status==='active').length;
-}
-
-function cycleGoal(id) {
-  const g = state.goals.find(x=>x.id===id); if (!g) return;
-  const seq = ['pending','active','done']; g.status = seq[(seq.indexOf(g.status)+1)%seq.length];
-  save(); render();
-}
-
-function addGoal() {
-  const ti=document.getElementById('new-goal-input'), ci=document.getElementById('new-goal-cat');
-  const t=ti.value.trim(); if (!t) return;
-  state.goals.push({ id:state.nextId++, title:t, cat:ci.value, status:'active' }); ti.value=''; save(); render();
-}
-
-function deleteGoal(id) {
-  if (!confirm('Remove this goal?')) return;
-  state.goals = state.goals.filter(g=>g.id!==id); save(); render();
-}
-
-
-// ── 6. SCREEN TIME ────────────────────────────────────────────────────
-// Screen values are stored as objects: { total: number|null, yt: number|null }
-// Legacy entries that are plain numbers are treated as total-only.
-
-function getScreenDay(d) {
-  const v = state.screen[d];
-  if (v == null) return { total:null, yt:null };
-  if (typeof v === 'number') return { total:v, yt:null }; // backwards compat
-  return v;
-}
-
-function renderScreen(td) {
-  const { total, yt } = getScreenDay(td);
-  const todayEl = document.getElementById('sc-today');
-  todayEl.textContent = total!=null ? total+'h' : '—';
-  todayEl.className   = 'sv'+(total==null?'':total<=2?' good':total<=4?'':' bad');
-  const ytEl = document.getElementById('sc-yt');
-  ytEl.textContent = yt!=null ? yt+'h' : '—';
-  ytEl.className   = 'sv'+(yt==null?'':yt<=0.5?' good':yt<=1.5?'':' bad');
-
-  const allTotals = Object.values(state.screen)
-    .map(v => typeof v==='number' ? v : v.total)
-    .filter(n => n!=null && !isNaN(n));
-  const avg = allTotals.length ? (allTotals.reduce((a,b)=>a+b,0)/allTotals.length).toFixed(1) : '—';
-  document.getElementById('sc-avg').textContent = avg!=='—' ? avg+'h' : '—';
-  document.getElementById('screen-val').textContent = total!=null ? total+'h' : '—';
-  document.getElementById('screen-card').className = 'mc'+(total==null?'':total<=2?' good':total<=4?' warn':' bad');
-
-  const days7 = Array.from({length:7},(_,i)=>new Date(Date.now()-(6-i)*DAY_MS).toISOString().slice(0,10));
-  document.getElementById('sc-week-bars').innerHTML = days7.map(d => {
-    const { total:v, yt:y } = getScreenDay(d); if (v==null) return '';
-    const pct=Math.min(100,(v/8)*100), cls=v<=2?'green':v<=4?'amber':'red';
-    const ytTag = y!=null ? ` <span style="color:var(--rd)">(YT: ${y}h)</span>` : '';
-    return `<div class="bwrap"><div class="blbl"><span>${fmt(d)}</span><span>${v}h${ytTag}</span></div>
-      <div class="btrack"><div class="bfill ${cls}" style="width:${pct}%"></div></div></div>`;
-  }).join('');
-}
-
-function logScreen() {
-  const inp=document.getElementById('sc-input'), v=parseFloat(inp.value); if (isNaN(v)||v<0) return;
-  const cur=getScreenDay(today()); state.screen[today()]={total:v,yt:cur.yt}; inp.value=''; save(); render();
-}
-
-function logYouTube() {
-  const inp=document.getElementById('sc-yt-input'), v=parseFloat(inp.value); if (isNaN(v)||v<0) return;
-  const cur=getScreenDay(today()); state.screen[today()]={total:cur.total,yt:v}; inp.value=''; save(); render();
-}
-
-
-// ── 7. WORKOUT HEATMAP ────────────────────────────────────────────────
-
-function renderHeatmap(td) {
-  const days28 = Array.from({length:28},(_,i)=>new Date(Date.now()-(27-i)*DAY_MS).toISOString().slice(0,10));
-  const rem    = days28.length % 7;
-  const pad    = Array.from({length: rem ? 7-rem : 0}, ()=>null);
-  document.getElementById('heatmap-grid').innerHTML = [...days28,...pad].map(d => {
-    if (!d) return `<div class="hcell future"></div>`;
-    const v=state.workouts[d]||0, cls=v===0?'s0':v===1?'s2':v>=2?'s4':'s1';
-    return `<div class="hcell ${cls}" title="${d}: ${v} session(s)" onclick="logWorkoutDay('${d}')"
-      style="${d===td?'outline:2px solid var(--g);outline-offset:1px':''}"></div>`;
-  }).join('');
-}
-
-function logWorkoutDay(d) { state.workouts[d]=((state.workouts[d]||0)+1)%4; save(); render(); }
-
-
-// ── 8. OVERVIEW METRICS ───────────────────────────────────────────────
-
-function renderMetrics(td) {
-  const streaks = state.habits.map(h=>calcStreak(h.log,td));
-  document.getElementById('streak-val').textContent = streaks.length ? Math.max(...streaks) : 0;
-  const weekStart = new Date(); weekStart.setDate(weekStart.getDate()-weekStart.getDay());
-  let wCount=0;
-  for (let i=0;i<7;i++) {
-    const d=new Date(weekStart); d.setDate(d.getDate()+i);
-    if ((state.workouts[d.toISOString().slice(0,10)]||0)>0) wCount++;
-  }
-  document.getElementById('workout-val').textContent = wCount;
-  document.getElementById('workout-card').className = 'mc'+(wCount>=4?' good':wCount>=2?'':' warn');
-}
-
-
-// ── 9. MUSCLE DIAGRAM ─────────────────────────────────────────────────
-
-function selectMuscle(key) {
-  const info = MUSCLE_MAP[key]; if (!info) return;
-  // Highlight matching SVG parts, dim everything else
-  document.querySelectorAll('.mpart').forEach(el => {
-    el.classList.remove('highlight','dim');
-    el.classList.add(info.ids.includes(el.id) ? 'highlight' : 'dim');
-  });
-  // Update info panel
-  document.getElementById('muscle-info').innerHTML = `
-    <div class="mi-name">${info.label}</div>
-    <div style="margin-top:6px">${info.moves.map(m=>
-      `<span class="badge" style="margin-right:4px;margin-bottom:4px;display:inline-block;cursor:pointer"
-             onclick="prefillMovement('${m}')">${m}</span>`
-    ).join('')}</div>`;
-}
-
-function prefillMovement(movement) {
-  // Find which group this movement belongs to, then pre-fill the logger
-  for (const [group, moves] of Object.entries(MOVEMENTS)) {
-    if (moves.includes(movement)) {
-      document.getElementById('muscle-select').value = group;
-      onMuscleGroupChange();
-      document.getElementById('movement-select').value = movement;
-      document.getElementById('muscle-select').scrollIntoView({ behavior:'smooth', block:'center' });
-      return;
-    }
-  }
-}
-
-
-// ── 10. EXERCISE LOGGER ───────────────────────────────────────────────
-
-function onMuscleGroupChange() {
-  const g=document.getElementById('muscle-select').value;
-  const sel=document.getElementById('movement-select');
-  sel.innerHTML='<option value="">— select movement —</option>';
-  if (!g) return;
-  MOVEMENTS[g].forEach(m => { const o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); });
-  document.getElementById('sets-container').innerHTML='';
-  document.getElementById('sets-input').value='';
-}
-
-function buildSetRows() {
-  const n=parseInt(document.getElementById('sets-input').value);
-  const c=document.getElementById('sets-container'); c.innerHTML='';
-  if (isNaN(n)||n<1) return;
-  for (let i=1;i<=n;i++) {
-    const row=document.createElement('div'); row.className='set-row';
-    row.innerHTML=`<span class="set-lbl">Set ${i}</span>
-      <input type="number" class="reps-input ainp" placeholder="reps" min="1" style="flex:1"/>
-      <input type="text" class="weight-input ainp" placeholder="weight / BW" style="flex:1.5"/>`;
-    c.appendChild(row);
-  }
-}
-
-function logExercise() {
-  const mg=document.getElementById('muscle-select').value;
-  const mv=document.getElementById('movement-select').value;
-  const notes=document.getElementById('session-notes').value.trim();
-  if (!mg||!mv) { alert('Select a muscle group and movement.'); return; }
-  const repsEls=document.querySelectorAll('.reps-input');
-  if (!repsEls.length) { alert('Enter number of sets.'); return; }
-  const sets=Array.from(repsEls).map((el,i)=>({ reps:parseInt(el.value)||0, weight:document.querySelectorAll('.weight-input')[i].value||'BW' }));
-  const sessions=getSessions();
-  sessions.push({ date:today(), muscleGroup:mg, movement:mv, sets, notes, ts:Date.now() });
-  saveSessions(sessions);
-  state.workouts[today()]=(state.workouts[today()]||0)+1; save(); render();
-  // Reset form
-  document.getElementById('muscle-select').value='';
-  document.getElementById('movement-select').innerHTML='<option value="">— select muscle group first —</option>';
-  document.getElementById('sets-input').value='';
-  document.getElementById('sets-container').innerHTML='';
-  document.getElementById('session-notes').value='';
-  renderSessionLog(); populateChartDropdown();
-  alert(`Logged: ${mv} — ${sets.length} set${sets.length>1?'s':''}`);
-}
-
-
-// ── 11. SESSION LOG ───────────────────────────────────────────────────
-
-function renderSessionLog() {
-  const sessions=getSessions();
-  const el=document.getElementById('session-log-list');
-  document.getElementById('session-count').textContent=sessions.length?`${sessions.length} total`:'';
-  if (!sessions.length) { el.innerHTML='<p class="empty-state">No sessions logged yet.</p>'; return; }
-
-  // Display newest first.
-  // KEY FIX: reversedIdx is the position in the REVERSED array.
-  // originalIdx = sessions.length - 1 - reversedIdx maps back to the original array
-  // for correct splice() in deleteSession().
-  el.innerHTML = sessions.slice().reverse().map((s, reversedIdx) => {
-    const originalIdx = sessions.length - 1 - reversedIdx;
-    const setsStr=s.sets.map(st=>`${st.reps}r @ ${st.weight}`).join(' · ');
-    const totalReps=s.sets.reduce((a,b)=>a+b.reps,0);
-    const gc=GROUP_COLORS[s.muscleGroup]||'#f5f5f4', gt=GROUP_TEXT[s.muscleGroup]||'var(--text2)';
-    return `<div class="sess-item">
-      <div class="sess-head">
-        <span class="sess-title">${s.movement}</span>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span class="sess-date">${fmt(s.date)}</span>
-          <button class="delbtn" onclick="deleteSession(${originalIdx})">✕</button>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
-        <span style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:4px;background:${gc};color:${gt}">${s.muscleGroup}</span>
-        <span class="sess-detail">${s.sets.length} sets · ${totalReps} total reps</span>
-      </div>
-      <div class="sess-detail" style="color:var(--text3)">${setsStr}</div>
-      ${s.notes?`<div class="sess-detail" style="font-style:italic;margin-top:2px">${s.notes}</div>`:''}
-    </div>`;
-  }).join('');
-}
-
-function deleteSession(originalIdx) {
-  if (!confirm('Remove this session?')) return;
-  const sessions=getSessions(); sessions.splice(originalIdx,1); saveSessions(sessions);
-  renderSessionLog(); populateChartDropdown();
-  const mv=document.getElementById('chart-movement-select').value; if (mv) renderChart(mv);
-}
-
-
-// ── 12. PROGRESS CHART ────────────────────────────────────────────────
-
-let chartInstance=null;
-
-function populateChartDropdown() {
-  const sessions=getSessions(), movements=[...new Set(sessions.map(s=>s.movement))];
-  const sel=document.getElementById('chart-movement-select'), cur=sel.value;
-  sel.innerHTML='<option value="">— select movement —</option>';
-  movements.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); });
-  if (cur && movements.includes(cur)) sel.value=cur;
-}
-
-function renderChart(mv) {
-  const canvas=document.getElementById('progress-chart'), noData=document.getElementById('no-data-msg'), hint=document.getElementById('chart-hint');
-  if (!mv) { canvas.style.display='none'; noData.style.display='none'; hint.style.display='block'; return; }
-  const sessions=getSessions().filter(s=>s.movement===mv);
-  hint.style.display='none';
-  if (!sessions.length) { canvas.style.display='none'; noData.style.display='block'; return; }
-  canvas.style.display='block'; noData.style.display='none';
-  const isDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
-  const gc=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.06)';
-  if (chartInstance) chartInstance.destroy();
-  chartInstance=new Chart(canvas.getContext('2d'),{
-    type:'line',
-    data:{ labels:sessions.map(s=>fmt(s.date)), datasets:[{ label:'Total reps', data:sessions.map(s=>s.sets.reduce((a,b)=>a+b.reps,0)), borderColor:'#1D9E75', backgroundColor:'rgba(29,158,117,0.1)', tension:0.3, pointRadius:5, pointBackgroundColor:'#1D9E75' }] },
-    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:false,title:{display:true,text:'Total reps'},grid:{color:gc},ticks:{color:'var(--text2)'}}, x:{grid:{color:gc},ticks:{color:'var(--text2)'}} } }
-  });
-}
-
-
-// ── 13. NUTRITION ─────────────────────────────────────────────────────
-
-let calChartInstance=null;
-
-const openMealModal  = () => { document.getElementById('meal-modal').classList.add('open'); document.getElementById('m-name').focus(); };
-const closeMealModal = () => document.getElementById('meal-modal').classList.remove('open');
-document.getElementById('meal-modal').addEventListener('click', e => { if (e.target===e.currentTarget) closeMealModal(); });
-
-function addMeal() {
-  const name=document.getElementById('m-name').value.trim(); if (!name) { alert('Enter a name.'); return; }
-  const cal=parseFloat(document.getElementById('m-cal').value)||0;
-  const pro=parseFloat(document.getElementById('m-pro').value)||0;
-  const carb=parseFloat(document.getElementById('m-carb').value)||0;
-  const fat=parseFloat(document.getElementById('m-fat').value)||0;
-  const td=today(); if (!state.nutrition.meals[td]) state.nutrition.meals[td]=[];
-  state.nutrition.meals[td].push({name,cal,pro,carb,fat,ts:Date.now()});
-  save(); closeMealModal(); ['m-name','m-cal','m-pro','m-carb','m-fat'].forEach(id=>{document.getElementById(id).value='';});
-  renderNutrition();
-}
-
-function deleteMeal(idx) { state.nutrition.meals[today()].splice(idx,1); save(); renderNutrition(); }
-
-function saveTargets() {
-  state.nutrition.targets={ cal:parseFloat(document.getElementById('t-cal').value)||2400, pro:parseFloat(document.getElementById('t-pro').value)||180, carb:parseFloat(document.getElementById('t-carb').value)||220, fat:parseFloat(document.getElementById('t-fat').value)||70 };
-  save(); renderNutrition();
-}
-
-function renderNutrition() {
-  const td=today(), meals=state.nutrition.meals[td]||[], targets=state.nutrition.targets;
-  document.getElementById('t-cal').value=targets.cal||''; document.getElementById('t-pro').value=targets.pro||'';
-  document.getElementById('t-carb').value=targets.carb||''; document.getElementById('t-fat').value=targets.fat||'';
-  const totals=meals.reduce((a,m)=>({cal:a.cal+m.cal,pro:a.pro+m.pro,carb:a.carb+m.carb,fat:a.fat+m.fat}),{cal:0,pro:0,carb:0,fat:0});
-  const setM=(vid,bid,val,tgt,color)=>{ document.getElementById(vid).textContent=Math.round(val); document.getElementById(bid).style.width=Math.min(100,(val/tgt)*100)+'%'; document.getElementById(bid).style.background=val>=tgt?'var(--g)':color; };
-  setM('mac-cal','mbar-cal',totals.cal,targets.cal||2400,'var(--am)'); setM('mac-pro','mbar-pro',totals.pro,targets.pro||180,'var(--g)');
-  setM('mac-carb','mbar-carb',totals.carb,targets.carb||220,'#378ADD'); setM('mac-fat','mbar-fat',totals.fat,targets.fat||70,'#D4537E');
-  document.getElementById('mac-cal-t').textContent=`target: ${targets.cal||2400}`;
-  document.getElementById('mac-pro-t').textContent=`target: ${targets.pro||180}g`;
-  document.getElementById('meal-list').innerHTML=meals.length
-    ? meals.map((m,i)=>`<div class="meal-row"><div><div class="meal-name">${m.name}</div><div class="meal-macros">${m.pro}g P · ${m.carb}g C · ${m.fat}g F</div></div><div style="display:flex;align-items:center;gap:8px"><div class="meal-cals">${m.cal} cal</div><button class="delbtn" onclick="deleteMeal(${i})">✕</button></div></div>`).join('')
-    : '<p class="empty-state">No meals logged today.</p>';
-  const days7=Array.from({length:7},(_,i)=>new Date(Date.now()-(6-i)*DAY_MS).toISOString().slice(0,10));
-  const isDark=window.matchMedia('(prefers-color-scheme:dark)').matches, gc=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.06)';
-  if (calChartInstance) calChartInstance.destroy();
-  calChartInstance=new Chart(document.getElementById('cal-chart').getContext('2d'),{
-    type:'bar', data:{labels:days7.map(d=>fmt(d)),datasets:[{label:'Calories',data:days7.map(d=>(state.nutrition.meals[d]||[]).reduce((a,m)=>a+m.cal,0)),backgroundColor:'rgba(29,158,117,0.7)',borderRadius:4}]},
-    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:gc},ticks:{color:'var(--text2)'}},x:{grid:{display:false},ticks:{color:'var(--text2)'}}}}
-  });
-}
-
-
-// ── 14. INIT ──────────────────────────────────────────────────────────
-
-render();
-populateChartDropdown();
-
-</script>
-</body>
-</html>
+          <div>
+            <div class="mslbl">Side</div>
+            <svg class="muscle-svg" viewBox="0 0 120 280" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="60" cy="22" rx="14" ry="18" fill="#c8c8c8" opacity=".35"/>
+              <g class="mpart" id="m-sdelt-s" onclick="selectMuscle('shoulders')"><ellipse cx="60" cy="58" rx="10" ry="12"/></g>
+              <g class="mpart" id="m-lat-s" onclick="selectMuscle('lats')"><ellipse cx="55" cy="90" rx="10" ry="25" transform="rotate(-10 55 90)"/></g>
+              <g class="mpart" id="m-tri-s" onclick="selectMuscle('triceps')"><ellipse cx="48" cy="85" rx="6" ry="16"/></g>
+              <g class="mpart" id="m-bic-s" onclick="selectMuscle('biceps')"><ellipse cx="72" cy="85" rx="5" ry="14"/></g>
+              <g class="mpart" id="m-obl-s" onclick="selectMuscle('abs')"><ellipse cx="65" cy="100" rx="6" ry="18"/></g>
+              <g class="mpart" id="m-glute-s" onclick="selectMuscle('glutes')"><ellipse cx="50" cy="140" rx="15" ry="18"/></g>
+              <g class="mpart" id="m-quad-s" onclick="selectMuscle('quads')"><ellipse cx="70" cy="180" rx="12" ry="35"/></g>
+              <g class="mpart" id="m-ham-s" onclick="selectMuscle('hamstrings')"><ellipse cx="48" cy="180" rx="10" ry="32"/></g>
+            </svg>
+          </div>
+          <div>
+            <div class="mslbl">Back</div>
+            <svg class="muscle-svg" viewBox="0 0 120 280" xmlns="http://www.w3.org/2000/svg">
