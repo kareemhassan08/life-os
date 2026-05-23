@@ -459,7 +459,7 @@ const today  = () => new Date().toISOString().slice(0, 10);
 const fmt    = d  => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
 const MOVEMENTS = {
-  push:        ['Incline DB press','Flat DB press','Dips','DB Skull Crusher','DB Overhead Tricep Extension','Tricep Push-ups','DB Front Raise','DB Lateral Raise','DB Overhead Press','DB Floor Press'],
+  push:        ['Incline DB press','Flat DB press','Dips','DB Skull Crusher','DB Overhead Tricep Extension','Tricep Push-ups','DB Front Raise','DB Lateral Raise','DB Overhead Press','DB Floor Press', 'DB Chest Fly'],
   pull:        ['Pull-ups','Chin-ups','DB row (single arm)','DB chest-supported row','DB face pull','DB hammer curl','DB incline bicep curl','DB Zottman curl','Inverted row'],
   core:        ['Hanging Knee Raise','Hanging Leg Raise','V-ups','DB Russian Twist','Plank','Ab wheel rollout','Hollow body hold'],
   lower:       ['DB Romanian Deadlift','Pistol Squat','DB Explosive Split Squat','DB Bulgarian split squat','DB Goblet squat','DB / One Leg Calf Raise','Step-ups','Nordic curl'],
@@ -467,7 +467,7 @@ const MOVEMENTS = {
 };
 
 const MUSCLE_MAP = {
-  chest:      { ids: ['m-chest-l','m-chest-r'],                               label: 'Chest (pectorals)',       moves: ['Incline DB press','Flat DB press','Dips','DB Floor Press','Tricep Push-ups'] },
+  chest:      { ids: ['m-chest-l','m-chest-r'],                               label: 'Chest (pectorals)',       moves: ['Incline DB press','Flat DB press','Dips','DB Floor Press','Tricep Push-ups', 'DB Chest Fly'] },
   shoulders:  { ids: ['m-fdelt-l','m-fdelt-r'],                               label: 'Shoulders (front delt)',  moves: ['DB Overhead Press','DB Front Raise','DB Lateral Raise','Incline DB press'] },
   reardelts:  { ids: ['m-rdelt-l','m-rdelt-r'],                               label: 'Rear delts',              moves: ['DB face pull','DB chest-supported row','DB row (single arm)'] },
   traps:      { ids: ['m-trap'],                                              label: 'Trapezius',               moves: ['DB face pull','DB chest-supported row','Pull-ups','Inverted row'] },
