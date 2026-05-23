@@ -117,18 +117,23 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .hcell.future { background: transparent; border: .5px solid var(--border); }
 
 /* ── 11. FITNESS TAB ──────────────────────────────────────────────── */
-.fit-grid { display: grid; grid-template-columns: 340px 1fr; gap: var(--gap); align-items: start; margin-bottom: 1.25rem; }
-@media (max-width: 700px) { .fit-grid { grid-template-columns: 1fr; } }
-.muscle-wrap { display: flex; gap: 8px; justify-content: center; }
-.muscle-svg  { flex: 1; max-width: 155px; }
-.mslbl { font-size: 10px; color: var(--text3); text-align: center; margin-bottom: 4px; }
-.muscle-info { margin-top: 10px; padding: 9px 11px; background: var(--bg); border-radius: var(--r); min-height: 60px; }
-.muscle-info .mi-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
-.muscle-info .mi-hint { font-size: 11px; color: var(--text3); font-style: italic; }
-.mpart { cursor: pointer; transition: fill .15s, opacity .15s; }
-.mpart:hover { opacity: .8; }
-.mpart.highlight { fill: #1D9E75 !important; opacity: 1; }
-.mpart.dim { opacity: .22; }
+.fit-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: var(--gap); align-items: start; margin-bottom: 1.25rem; }
+@media (max-width: 850px) { .fit-grid { grid-template-columns: 1fr; } }
+
+.muscle-wrap { display: flex; gap: 12px; justify-content: space-around; padding: 10px 0; }
+.muscle-svg  { flex: 1; max-width: 200px; height: auto; }
+
+.mslbl { font-size: 10px; color: var(--text3); text-align: center; margin-bottom: 4px; text-transform: uppercase; }
+.muscle-info { margin-top: 10px; padding: 12px; background: var(--bg); border-radius: var(--r); min-height: 80px; border: 1px solid var(--border); }
+
+.mpart { cursor: pointer; transition: all 0.3s ease; fill: #cbd5e0; }
+.mpart.v-low  { fill: #9fe1cb; }
+.mpart.v-mid  { fill: #5dcaa5; }
+.mpart.v-high { fill: #1d9e75; }
+
+.mpart:hover { filter: brightness(0.9); stroke: #fff; stroke-width: 0.5px; }
+.mpart.highlight { fill: var(--am) !important; opacity: 1; stroke: #fff; stroke-width: 1px; }
+.mpart.dim { opacity: 0.3; }
 .set-row { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
 .set-lbl { font-size: 11px; color: var(--text2); min-width: 38px; }
 .sess-item { padding: 9px 0; border-bottom: .5px solid var(--border); }
@@ -265,68 +270,57 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <div class="ctitle">💪 Muscle map <span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:auto">tap a muscle</span></div>
         <div class="muscle-wrap">
           <!-- FRONT -->
-          <div>
-            <div class="mslbl">Front</div>
-            <svg class="muscle-svg" viewBox="0 0 120 280" xmlns="http://www.w3.org/2000/svg">
-              <ellipse cx="60" cy="22" rx="16" ry="18" fill="#c8c8c8" opacity=".35"/>
-              <rect x="54" y="38" width="12" height="12" rx="3" fill="#c8c8c8" opacity=".35"/>
-              <g class="mpart" id="m-chest-l" onclick="selectMuscle('chest')"><ellipse cx="48" cy="64" rx="13" ry="11" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-chest-r" onclick="selectMuscle('chest')"><ellipse cx="72" cy="64" rx="13" ry="11" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-fdelt-l" onclick="selectMuscle('shoulders')"><ellipse cx="33" cy="58" rx="9" ry="10" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-fdelt-r" onclick="selectMuscle('shoulders')"><ellipse cx="87" cy="58" rx="9" ry="10" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-abs" onclick="selectMuscle('abs')">
-                <rect x="50" y="80" width="20" height="34" rx="5" fill="#a0aec0"/>
-                <line x1="50" y1="91" x2="70" y2="91" stroke="white" stroke-width="1" opacity=".4"/>
-                <line x1="50" y1="101" x2="70" y2="101" stroke="white" stroke-width="1" opacity=".4"/>
-                <line x1="60" y1="80" x2="60" y2="114" stroke="white" stroke-width="1" opacity=".4"/>
-              </g>
-              <g class="mpart" id="m-obl-l" onclick="selectMuscle('abs')"><ellipse cx="44" cy="93" rx="7" ry="14" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-obl-r" onclick="selectMuscle('abs')"><ellipse cx="76" cy="93" rx="7" ry="14" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-bic-l" onclick="selectMuscle('biceps')"><ellipse cx="29" cy="85" rx="7" ry="16" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-bic-r" onclick="selectMuscle('biceps')"><ellipse cx="91" cy="85" rx="7" ry="16" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-fore-fl" onclick="selectMuscle('forearms')"><ellipse cx="25" cy="118" rx="6" ry="14" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-fore-fr" onclick="selectMuscle('forearms')"><ellipse cx="95" cy="118" rx="6" ry="14" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-quad-l" onclick="selectMuscle('quads')"><ellipse cx="48" cy="172" rx="13" ry="30" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-quad-r" onclick="selectMuscle('quads')"><ellipse cx="72" cy="172" rx="13" ry="30" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-calf-fl" onclick="selectMuscle('calves')"><ellipse cx="48" cy="232" rx="9" ry="20" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-calf-fr" onclick="selectMuscle('calves')"><ellipse cx="72" cy="232" rx="9" ry="20" fill="#a0aec0"/></g>
-              <ellipse cx="22" cy="138" rx="6" ry="7" fill="#c8c8c8" opacity=".3"/>
-              <ellipse cx="98" cy="138" rx="6" ry="7" fill="#c8c8c8" opacity=".3"/>
-              <ellipse cx="48" cy="258" rx="10" ry="6" fill="#c8c8c8" opacity=".3"/>
-              <ellipse cx="72" cy="258" rx="10" ry="6" fill="#c8c8c8" opacity=".3"/>
-              <rect x="47" y="118" width="26" height="14" rx="4" fill="#c8c8c8" opacity=".3"/>
-            </svg>
-          </div>
-          <!-- BACK -->
-          <div>
-            <div class="mslbl">Back</div>
-            <svg class="muscle-svg" viewBox="0 0 120 280" xmlns="http://www.w3.org/2000/svg">
-              <ellipse cx="60" cy="22" rx="16" ry="18" fill="#c8c8c8" opacity=".35"/>
-              <rect x="54" y="38" width="12" height="12" rx="3" fill="#c8c8c8" opacity=".35"/>
-              <g class="mpart" id="m-trap"    onclick="selectMuscle('traps')"><polygon points="60,40 36,62 84,62" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-rdelt-l" onclick="selectMuscle('reardelts')"><ellipse cx="33" cy="60" rx="9" ry="9" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-rdelt-r" onclick="selectMuscle('reardelts')"><ellipse cx="87" cy="60" rx="9" ry="9" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-lat-l"   onclick="selectMuscle('lats')"><ellipse cx="44" cy="84" rx="13" ry="20" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-lat-r"   onclick="selectMuscle('lats')"><ellipse cx="76" cy="84" rx="13" ry="20" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-lb"      onclick="selectMuscle('lowerback')"><rect x="50" y="100" width="20" height="20" rx="4" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-tri-l"   onclick="selectMuscle('triceps')"><ellipse cx="29" cy="83" rx="7" ry="16" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-tri-r"   onclick="selectMuscle('triceps')"><ellipse cx="91" cy="83" rx="7" ry="16" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-fore-bl" onclick="selectMuscle('forearms')"><ellipse cx="25" cy="116" rx="6" ry="14" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-fore-br" onclick="selectMuscle('forearms')"><ellipse cx="95" cy="116" rx="6" ry="14" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-glute-l" onclick="selectMuscle('glutes')"><ellipse cx="49" cy="130" rx="14" ry="14" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-glute-r" onclick="selectMuscle('glutes')"><ellipse cx="71" cy="130" rx="14" ry="14" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-ham-l"   onclick="selectMuscle('hamstrings')"><ellipse cx="49" cy="178" rx="13" ry="28" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-ham-r"   onclick="selectMuscle('hamstrings')"><ellipse cx="71" cy="178" rx="13" ry="28" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-calf-bl" onclick="selectMuscle('calves')"><ellipse cx="49" cy="232" rx="9" ry="20" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-calf-br" onclick="selectMuscle('calves')"><ellipse cx="71" cy="232" rx="9" ry="20" fill="#a0aec0"/></g>
-              <ellipse cx="22" cy="136" rx="6" ry="7" fill="#c8c8c8" opacity=".3"/>
-              <ellipse cx="98" cy="136" rx="6" ry="7" fill="#c8c8c8" opacity=".3"/>
-              <ellipse cx="49" cy="258" rx="10" ry="6" fill="#c8c8c8" opacity=".3"/>
-              <ellipse cx="71" cy="258" rx="10" ry="6" fill="#c8c8c8" opacity=".3"/>
-              <rect x="47" y="118" width="26" height="14" rx="4" fill="#c8c8c8" opacity=".3"/>
-            </svg>
-          </div>
-        </div>
+         <div class="muscle-wrap">
+  <div>
+    <div class="mslbl">Front</div>
+    <svg class="muscle-svg" viewBox="0 0 120 280" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="60" cy="22" rx="16" ry="18" fill="#c8c8c8" opacity=".35"/>
+      <rect x="54" y="38" width="12" height="12" rx="3" fill="#c8c8c8" opacity=".35"/>
+      <g class="mpart" id="m-chest-l" onclick="selectMuscle('chest')"><ellipse cx="48" cy="64" rx="13" ry="11"/></g>
+      <g class="mpart" id="m-chest-r" onclick="selectMuscle('chest')"><ellipse cx="72" cy="64" rx="13" ry="11"/></g>
+      <g class="mpart" id="m-fdelt-l" onclick="selectMuscle('shoulders')"><ellipse cx="33" cy="58" rx="9" ry="10"/></g>
+      <g class="mpart" id="m-fdelt-r" onclick="selectMuscle('shoulders')"><ellipse cx="87" cy="58" rx="9" ry="10"/></g>
+      <g class="mpart" id="m-abs" onclick="selectMuscle('abs')"><rect x="50" y="80" width="20" height="34" rx="5"/></g>
+      <g class="mpart" id="m-obl-l" onclick="selectMuscle('abs')"><ellipse cx="44" cy="93" rx="7" ry="14"/></g>
+      <g class="mpart" id="m-obl-r" onclick="selectMuscle('abs')"><ellipse cx="76" cy="93" rx="7" ry="14"/></g>
+      <g class="mpart" id="m-bic-l" onclick="selectMuscle('biceps')"><ellipse cx="29" cy="85" rx="7" ry="16"/></g>
+      <g class="mpart" id="m-bic-r" onclick="selectMuscle('biceps')"><ellipse cx="91" cy="85" rx="7" ry="16"/></g>
+      <g class="mpart" id="m-quad-l" onclick="selectMuscle('quads')"><ellipse cx="48" cy="172" rx="13" ry="30"/></g>
+      <g class="mpart" id="m-quad-r" onclick="selectMuscle('quads')"><ellipse cx="72" cy="172" rx="13" ry="30"/></g>
+    </svg>
+  </div>
+  <div>
+    <div class="mslbl">Side</div>
+    <svg class="muscle-svg" viewBox="0 0 120 280" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="60" cy="22" rx="14" ry="18" fill="#c8c8c8" opacity=".35"/>
+      <g class="mpart" id="m-sdelt-s" onclick="selectMuscle('shoulders')"><ellipse cx="60" cy="58" rx="10" ry="12"/></g>
+      <g class="mpart" id="m-lat-s" onclick="selectMuscle('lats')"><ellipse cx="55" cy="90" rx="10" ry="25" transform="rotate(-10 55 90)"/></g>
+      <g class="mpart" id="m-tri-s" onclick="selectMuscle('triceps')"><ellipse cx="48" cy="85" rx="6" ry="16"/></g>
+      <g class="mpart" id="m-bic-s" onclick="selectMuscle('biceps')"><ellipse cx="72" cy="85" rx="5" ry="14"/></g>
+      <g class="mpart" id="m-obl-s" onclick="selectMuscle('abs')"><ellipse cx="65" cy="100" rx="6" ry="18"/></g>
+      <g class="mpart" id="m-glute-s" onclick="selectMuscle('glutes')"><ellipse cx="50" cy="140" rx="15" ry="18"/></g>
+      <g class="mpart" id="m-quad-s" onclick="selectMuscle('quads')"><ellipse cx="70" cy="180" rx="12" ry="35"/></g>
+      <g class="mpart" id="m-ham-s" onclick="selectMuscle('hamstrings')"><ellipse cx="48" cy="180" rx="10" ry="32"/></g>
+    </svg>
+  </div>
+  <div>
+    <div class="mslbl">Back</div>
+    <svg class="muscle-svg" viewBox="0 0 120 280" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="60" cy="22" rx="16" ry="18" fill="#c8c8c8" opacity=".35"/>
+      <g class="mpart" id="m-trap" onclick="selectMuscle('traps')"><polygon points="60,40 36,62 84,62"/></g>
+      <g class="mpart" id="m-rdelt-l" onclick="selectMuscle('reardelts')"><ellipse cx="33" cy="60" rx="9" ry="9"/></g>
+      <g class="mpart" id="m-rdelt-r" onclick="selectMuscle('reardelts')"><ellipse cx="87" cy="60" rx="9" ry="9"/></g>
+      <g class="mpart" id="m-lat-l" onclick="selectMuscle('lats')"><ellipse cx="44" cy="84" rx="13" ry="20"/></g>
+      <g class="mpart" id="m-lat-r" onclick="selectMuscle('lats')"><ellipse cx="76" cy="84" rx="13" ry="20"/></g>
+      <g class="mpart" id="m-tri-l" onclick="selectMuscle('triceps')"><ellipse cx="29" cy="83" rx="7" ry="16"/></g>
+      <g class="mpart" id="m-tri-r" onclick="selectMuscle('triceps')"><ellipse cx="91" cy="83" rx="7" ry="16"/></g>
+      <g class="mpart" id="m-glute-l" onclick="selectMuscle('glutes')"><ellipse cx="49" cy="130" rx="14" ry="14"/></g>
+      <g class="mpart" id="m-glute-r" onclick="selectMuscle('glutes')"><ellipse cx="71" cy="130" rx="14" ry="14"/></g>
+      <g class="mpart" id="m-ham-l" onclick="selectMuscle('hamstrings')"><ellipse cx="49" cy="178" rx="13" ry="28"/></g>
+      <g class="mpart" id="m-ham-r" onclick="selectMuscle('hamstrings')"><ellipse cx="71" cy="178" rx="13" ry="28"/></g>
+    </svg>
+  </div>
+</div>
         <div class="muscle-info" id="muscle-info">
           <div class="mi-hint">Tap a muscle to see relevant exercises</div>
         </div>
@@ -468,17 +462,17 @@ const MOVEMENTS = {
 
 const MUSCLE_MAP = {
   chest:      { ids: ['m-chest-l','m-chest-r'],                               label: 'Chest (pectorals)',       moves: ['Incline DB press','Flat DB press','Dips','DB Floor Press','Tricep Push-ups', 'DB Chest Fly'] },
-  shoulders:  { ids: ['m-fdelt-l','m-fdelt-r'],                               label: 'Shoulders (front delt)',  moves: ['DB Overhead Press','DB Front Raise','DB Lateral Raise','Incline DB press'] },
+  shoulders:  { ids: ['m-fdelt-l','m-fdelt-r','m-sdelt-s'],                   label: 'Shoulders',               moves: ['DB Overhead Press','DB Front Raise','DB Lateral Raise','Incline DB press'] },
   reardelts:  { ids: ['m-rdelt-l','m-rdelt-r'],                               label: 'Rear delts',              moves: ['DB face pull','DB chest-supported row','DB row (single arm)'] },
   traps:      { ids: ['m-trap'],                                              label: 'Trapezius',               moves: ['DB face pull','DB chest-supported row','Pull-ups','Inverted row'] },
-  lats:       { ids: ['m-lat-l','m-lat-r'],                                   label: 'Lats',                    moves: ['Pull-ups','Chin-ups','DB row (single arm)','Inverted row'] },
-  biceps:     { ids: ['m-bic-l','m-bic-r'],                                   label: 'Biceps',                  moves: ['Chin-ups','DB hammer curl','DB incline bicep curl','DB Zottman curl'] },
-  triceps:    { ids: ['m-tri-l','m-tri-r'],                                   label: 'Triceps',                 moves: ['Dips','DB Skull Crusher','DB Overhead Tricep Extension','Tricep Push-ups'] },
-  abs:        { ids: ['m-abs','m-obl-l','m-obl-r'],                           label: 'Core / Abs',              moves: ['Hanging Knee Raise','Hanging Leg Raise','V-ups','DB Russian Twist','Ab wheel rollout','Hollow body hold'] },
+  lats:       { ids: ['m-lat-l','m-lat-r','m-lat-s'],                         label: 'Lats',                    moves: ['Pull-ups','Chin-ups','DB row (single arm)','Inverted row'] },
+  biceps:     { ids: ['m-bic-l','m-bic-r','m-bic-s'],                         label: 'Biceps',                  moves: ['Chin-ups','DB hammer curl','DB incline bicep curl','DB Zottman curl'] },
+  triceps:    { ids: ['m-tri-l','m-tri-r','m-tri-s'],                         label: 'Triceps',                 moves: ['Dips','DB Skull Crusher','DB Overhead Tricep Extension','Tricep Push-ups'] },
+  abs:        { ids: ['m-abs','m-obl-l','m-obl-r','m-obl-s'],                 label: 'Core / Abs',              moves: ['Hanging Knee Raise','Hanging Leg Raise','V-ups','DB Russian Twist','Ab wheel rollout','Hollow body hold'] },
   lowerback:  { ids: ['m-lb'],                                                label: 'Lower back / Erectors',   moves: ['DB Romanian Deadlift','Jefferson curl'] },
-  quads:      { ids: ['m-quad-l','m-quad-r'],                                 label: 'Quadriceps',              moves: ['Pistol Squat','DB Explosive Split Squat','DB Bulgarian split squat','DB Goblet squat','Step-ups'] },
-  hamstrings: { ids: ['m-ham-l','m-ham-r'],                                   label: 'Hamstrings',              moves: ['DB Romanian Deadlift','Nordic curl','DB Bulgarian split squat'] },
-  glutes:     { ids: ['m-glute-l','m-glute-r'],                               label: 'Glutes',                  moves: ['DB Romanian Deadlift','DB Explosive Split Squat','DB Bulgarian split squat','Step-ups'] },
+  quads:      { ids: ['m-quad-l','m-quad-r','m-quad-s'],                     label: 'Quadriceps',              moves: ['Pistol Squat','DB Explosive Split Squat','DB Bulgarian split squat','DB Goblet squat','Step-ups'] },
+  hamstrings: { ids: ['m-ham-l','m-ham-r','m-ham-s'],                         label: 'Hamstrings',              moves: ['DB Romanian Deadlift','Nordic curl','DB Bulgarian split squat'] },
+  glutes:     { ids: ['m-glute-l','m-glute-r','m-glute-s'],                   label: 'Glutes',                  moves: ['DB Romanian Deadlift','DB Explosive Split Squat','DB Bulgarian split squat','Step-ups'] },
   calves:     { ids: ['m-calf-fl','m-calf-fr','m-calf-bl','m-calf-br'],       label: 'Calves',                  moves: ['DB / One Leg Calf Raise'] },
   forearms:   { ids: ['m-fore-fl','m-fore-fr','m-fore-bl','m-fore-br'],       label: 'Forearms',                moves: ['DB Zottman curl','Pull-ups','DB row (single arm)'] }
 };
@@ -531,6 +525,34 @@ function render() {
   document.getElementById('today-date').textContent =
     new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
   renderHabits(td); renderGoals(); renderScreen(td); renderHeatmap(td); renderMetrics(td);
+     updateMuscleHeatmap();
+}
+function updateMuscleHeatmap() {
+  const sessions = getSessions();
+  const muscleVolume = {};
+  const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+  
+  sessions.forEach(s => {
+    if (s.ts < sevenDaysAgo) return;
+    for (const [key, info] of Object.entries(MUSCLE_MAP)) {
+      if (info.moves.includes(s.movement)) {
+        muscleVolume[key] = (muscleVolume[key] || 0) + s.sets.length;
+      }
+    }
+  });
+
+  for (const [key, info] of Object.entries(MUSCLE_MAP)) {
+    const vol = muscleVolume[key] || 0;
+    let cls = (vol > 12) ? 'v-high' : (vol > 6) ? 'v-mid' : (vol > 0) ? 'v-low' : '';
+    info.ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.remove('v-low', 'v-mid', 'v-high');
+        if (cls) el.classList.add(cls);
+      }
+    });
+  }
+}     
 }
 
 
