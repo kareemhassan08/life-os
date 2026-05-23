@@ -117,18 +117,48 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .hcell.future { background: transparent; border: .5px solid var(--border); }
 
 /* ── 11. FITNESS TAB ──────────────────────────────────────────────── */
-.fit-grid { display: grid; grid-template-columns: 340px 1fr; gap: var(--gap); align-items: start; margin-bottom: 1.25rem; }
-@media (max-width: 700px) { .fit-grid { grid-template-columns: 1fr; } }
-.muscle-wrap { display: flex; gap: 8px; justify-content: center; }
-.muscle-svg  { flex: 1; max-width: 155px; }
+
+/*
+  fit-grid: two columns — muscle map card on left, logger on right.
+  340px is a fixed width for the map; 1fr means "take the rest".
+  align-items:start stops the cards from stretching to equal height.
+*/
+.fit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); align-items: start; margin-bottom: 1.25rem; }
+@media (max-width: 760px) { .fit-grid { grid-template-columns: 1fr; } }
+
+/*
+  muscle-wrap: three SVG views side by side (front, side, back).
+  justify-content:center keeps them centred inside the card.
+  gap:12px adds breathing room between them.
+*/
+.muscle-wrap { display: flex; gap: 12px; justify-content: center; align-items: flex-start; width: 100%; }
+.muscle-svg  { flex: 1; width: 100%; height: auto; min-height: 280px; display: block; }
+
 .mslbl { font-size: 10px; color: var(--text3); text-align: center; margin-bottom: 4px; }
 .muscle-info { margin-top: 10px; padding: 9px 11px; background: var(--bg); border-radius: var(--r); min-height: 60px; }
 .muscle-info .mi-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
 .muscle-info .mi-hint { font-size: 11px; color: var(--text3); font-style: italic; }
-.mpart { cursor: pointer; transition: fill .15s, opacity .15s; }
-.mpart:hover { opacity: .8; }
+
+/* Intensity legend row */
+.intensity-legend { display: flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 10px; color: var(--text3); flex-wrap: wrap; }
+.ileg-swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+/*
+  mpart: every clickable muscle shape in the SVG gets this class.
+  transition: fill means colour changes animate smoothly over 0.2s.
+  The fill on each shape is set in HTML as a default (the grey resting state).
+  JS overrides it via el.style.fill = "..." for intensity colouring.
+*/
+.mpart { cursor: pointer; transition: fill .2s, opacity .15s; }
+.mpart:hover { opacity: .75; }
+
+/*
+  highlight / dim are toggled by selectMuscle().
+  !important on highlight overrides any inline style.fill set by intensity colouring.
+  dim drops opacity so unrelated muscles fade back.
+*/
 .mpart.highlight { fill: #1D9E75 !important; opacity: 1; }
-.mpart.dim { opacity: .22; }
+.mpart.dim { opacity: .18; }
 .set-row { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
 .set-lbl { font-size: 11px; color: var(--text2); min-width: 38px; }
 .sess-item { padding: 9px 0; border-bottom: .5px solid var(--border); }
@@ -263,70 +293,220 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <!-- Muscle map -->
       <div class="card" style="margin-bottom:0">
         <div class="ctitle">💪 Muscle map <span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:auto">tap a muscle</span></div>
+
+        <!--
+          Three SVG views. Each is a separate <svg> element sharing the same
+          120×280 coordinate space. The viewBox="0 0 120 280" means:
+            - Start at coordinate (0,0) top-left
+            - The canvas is 120 units wide, 280 units tall
+          These units are NOT pixels — they're just a consistent grid.
+          The browser stretches the grid to fit max-width:110px per view.
+          So cx="60" is always the horizontal centre regardless of rendered size.
+        -->
         <div class="muscle-wrap">
-          <!-- FRONT -->
+
+          <!-- ── FRONT VIEW ── -->
           <div>
             <div class="mslbl">Front</div>
             <svg class="muscle-svg" viewBox="0 0 120 280" xmlns="http://www.w3.org/2000/svg">
+              <!-- Non-interactive anatomy: head, neck, pelvis, hands, feet -->
+              <!-- These just have inline fill="#c8c8c8" — no class, no JS touches them -->
               <ellipse cx="60" cy="22" rx="16" ry="18" fill="#c8c8c8" opacity=".35"/>
               <rect x="54" y="38" width="12" height="12" rx="3" fill="#c8c8c8" opacity=".35"/>
-              <g class="mpart" id="m-chest-l" onclick="selectMuscle('chest')"><ellipse cx="48" cy="64" rx="13" ry="11" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-chest-r" onclick="selectMuscle('chest')"><ellipse cx="72" cy="64" rx="13" ry="11" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-fdelt-l" onclick="selectMuscle('shoulders')"><ellipse cx="33" cy="58" rx="9" ry="10" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-fdelt-r" onclick="selectMuscle('shoulders')"><ellipse cx="87" cy="58" rx="9" ry="10" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-abs" onclick="selectMuscle('abs')">
-                <rect x="50" y="80" width="20" height="34" rx="5" fill="#a0aec0"/>
-                <line x1="50" y1="91" x2="70" y2="91" stroke="white" stroke-width="1" opacity=".4"/>
-                <line x1="50" y1="101" x2="70" y2="101" stroke="white" stroke-width="1" opacity=".4"/>
-                <line x1="60" y1="80" x2="60" y2="114" stroke="white" stroke-width="1" opacity=".4"/>
-              </g>
-              <g class="mpart" id="m-obl-l" onclick="selectMuscle('abs')"><ellipse cx="44" cy="93" rx="7" ry="14" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-obl-r" onclick="selectMuscle('abs')"><ellipse cx="76" cy="93" rx="7" ry="14" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-bic-l" onclick="selectMuscle('biceps')"><ellipse cx="29" cy="85" rx="7" ry="16" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-bic-r" onclick="selectMuscle('biceps')"><ellipse cx="91" cy="85" rx="7" ry="16" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-fore-fl" onclick="selectMuscle('forearms')"><ellipse cx="25" cy="118" rx="6" ry="14" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-fore-fr" onclick="selectMuscle('forearms')"><ellipse cx="95" cy="118" rx="6" ry="14" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-quad-l" onclick="selectMuscle('quads')"><ellipse cx="48" cy="172" rx="13" ry="30" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-quad-r" onclick="selectMuscle('quads')"><ellipse cx="72" cy="172" rx="13" ry="30" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-calf-fl" onclick="selectMuscle('calves')"><ellipse cx="48" cy="232" rx="9" ry="20" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-calf-fr" onclick="selectMuscle('calves')"><ellipse cx="72" cy="232" rx="9" ry="20" fill="#a0aec0"/></g>
               <ellipse cx="22" cy="138" rx="6" ry="7" fill="#c8c8c8" opacity=".3"/>
               <ellipse cx="98" cy="138" rx="6" ry="7" fill="#c8c8c8" opacity=".3"/>
               <ellipse cx="48" cy="258" rx="10" ry="6" fill="#c8c8c8" opacity=".3"/>
               <ellipse cx="72" cy="258" rx="10" ry="6" fill="#c8c8c8" opacity=".3"/>
               <rect x="47" y="118" width="26" height="14" rx="4" fill="#c8c8c8" opacity=".3"/>
+
+              <!-- Interactive muscles — each wrapped in <g class="mpart" id="..." onclick="...">
+                   The <g> is a "group" element. It has no visual output itself but inherits
+                   class/events and passes them to children. We group so one click handler
+                   covers multi-shape muscles (e.g. abs has rect + 3 lines).
+                   The fill on the inner shape is the DEFAULT (resting) colour.
+                   JS will override it with intensity colour via el.querySelector('[fill]').setAttribute('fill',...)
+              -->
+
+              <!-- CHEST: two ellipses, one per pec -->
+              <g class="mpart" id="m-chest-l" onclick="selectMuscle('chest')"><ellipse cx="48" cy="64" rx="14" ry="12" fill="#a0aec0"/></g>
+              <g class="mpart" id="m-chest-r" onclick="selectMuscle('chest')"><ellipse cx="72" cy="64" rx="14" ry="12" fill="#a0aec0"/></g>
+
+              <!-- FRONT DELTS: sit on the shoulder corners -->
+              <g class="mpart" id="m-fdelt-l" onclick="selectMuscle('shoulders')"><ellipse cx="32" cy="57" rx="10" ry="11" fill="#a0aec0"/></g>
+              <g class="mpart" id="m-fdelt-r" onclick="selectMuscle('shoulders')"><ellipse cx="88" cy="57" rx="10" ry="11" fill="#a0aec0"/></g>
+
+              <!-- ABS: rect for the rectus, lines for the tendinous intersections (the "six-pack" divisions) -->
+              <g class="mpart" id="m-abs" onclick="selectMuscle('abs')">
+                <rect x="49" y="79" width="22" height="36" rx="5" fill="#a0aec0"/>
+                <line x1="49" y1="90" x2="71" y2="90" stroke="white" stroke-width="1.2" opacity=".45"/>
+                <line x1="49" y1="102" x2="71" y2="102" stroke="white" stroke-width="1.2" opacity=".45"/>
+                <line x1="60" y1="79" x2="60" y2="115" stroke="white" stroke-width="1.2" opacity=".45"/>
+              </g>
+
+              <!-- OBLIQUES: flanking the abs -->
+              <g class="mpart" id="m-obl-l" onclick="selectMuscle('abs')"><ellipse cx="43" cy="93" rx="7" ry="15" fill="#a0aec0"/></g>
+              <g class="mpart" id="m-obl-r" onclick="selectMuscle('abs')"><ellipse cx="77" cy="93" rx="7" ry="15" fill="#a0aec0"/></g>
+
+              <!-- BICEPS: upper arm, front -->
+              <g class="mpart" id="m-bic-l" onclick="selectMuscle('biceps')"><ellipse cx="28" cy="85" rx="7" ry="17" fill="#a0aec0"/></g>
+              <g class="mpart" id="m-bic-r" onclick="selectMuscle('biceps')"><ellipse cx="92" cy="85" rx="7" ry="17" fill="#a0aec0"/></g>
+
+              <!-- FOREARMS front -->
+              <g class="mpart" id="m-fore-fl" onclick="selectMuscle('forearms')"><ellipse cx="24" cy="119" rx="6" ry="15" fill="#a0aec0"/></g>
+              <g class="mpart" id="m-fore-fr" onclick="selectMuscle('forearms')"><ellipse cx="96" cy="119" rx="6" ry="15" fill="#a0aec0"/></g>
+
+              <!-- QUADS: big ellipses, upper leg front. ry=32 makes them tall. -->
+              <g class="mpart" id="m-quad-l" onclick="selectMuscle('quads')"><ellipse cx="48" cy="173" rx="14" ry="32" fill="#a0aec0"/></g>
+              <g class="mpart" id="m-quad-r" onclick="selectMuscle('quads')"><ellipse cx="72" cy="173" rx="14" ry="32" fill="#a0aec0"/></g>
+
+              <!-- CALVES front (tibialis anterior) -->
+              <g class="mpart" id="m-calf-fl" onclick="selectMuscle('calves')"><ellipse cx="48" cy="233" rx="9" ry="21" fill="#a0aec0"/></g>
+              <g class="mpart" id="m-calf-fr" onclick="selectMuscle('calves')"><ellipse cx="72" cy="233" rx="9" ry="21" fill="#a0aec0"/></g>
             </svg>
           </div>
-          <!-- BACK -->
+
+          <!-- ── SIDE VIEW ──
+               The lateral view uses a silhouette coordinate space.
+               cx values are compressed toward the centre (range ~45–80) to simulate
+               a profile. The key feature here is the lat sweep: a wide ellipse
+               starting near the shoulder and tapering at the waist.
+               The spine is shown as a faint rect for spatial reference.
+          -->
+          <div>
+            <div class="mslbl">Side</div>
+            <svg class="muscle-svg" viewBox="0 0 120 280" xmlns="http://www.w3.org/2000/svg">
+              <!-- Non-interactive: head, neck, spine reference, pelvis, foot -->
+              <ellipse cx="58" cy="22" rx="14" ry="18" fill="#c8c8c8" opacity=".35"/>
+              <rect x="54" y="38" width="10" height="12" rx="3" fill="#c8c8c8" opacity=".3"/>
+              <!-- spine reference line -->
+              <line x1="60" y1="50" x2="60" y2="140" stroke="#c8c8c8" stroke-width="3" opacity=".2" stroke-linecap="round"/>
+              <ellipse cx="56" cy="258" rx="12" ry="6" fill="#c8c8c8" opacity=".3"/>
+              <rect x="50" y="125" width="18" height="12" rx="3" fill="#c8c8c8" opacity=".25"/>
+
+              <!-- SHOULDER (side delt) — lateral deltoid is most visible from the side -->
+              <g class="mpart" id="m-sdelt" onclick="selectMuscle('shoulders')">
+                <ellipse cx="44" cy="57" rx="11" ry="12" fill="#a0aec0"/>
+              </g>
+
+              <!-- CHEST (pec, side profile) — visible as a forward bulge -->
+              <g class="mpart" id="m-chest-s" onclick="selectMuscle('chest')">
+                <ellipse cx="47" cy="68" rx="10" ry="10" fill="#a0aec0"/>
+              </g>
+
+              <!-- TRICEP — dominant on the back of the upper arm from the side -->
+              <g class="mpart" id="m-tri-s" onclick="selectMuscle('triceps')">
+                <ellipse cx="70" cy="83" rx="8" ry="18" fill="#a0aec0"/>
+              </g>
+
+              <!-- BICEP — front of upper arm -->
+              <g class="mpart" id="m-bic-s" onclick="selectMuscle('biceps')">
+                <ellipse cx="48" cy="83" rx="7" ry="17" fill="#a0aec0"/>
+              </g>
+
+              <!-- LAT — the defining feature from the side: wide fan from armpit to waist.
+                   We use a polygon with 4 points to capture the sweep shape:
+                   top-back shoulder → narrow waist → hip → back out to armpit area.
+                   points="x1,y1 x2,y2 x3,y3 x4,y4" — clockwise from top-left.
+              -->
+              <g class="mpart" id="m-lat-s" onclick="selectMuscle('lats')">
+                <polygon points="68,58 80,62 74,110 62,105" fill="#a0aec0"/>
+              </g>
+
+              <!-- LOWER BACK / ERECTOR — the rear column -->
+              <g class="mpart" id="m-lb-s" onclick="selectMuscle('lowerback')">
+                <ellipse cx="70" cy="103" rx="7" ry="15" fill="#a0aec0"/>
+              </g>
+
+              <!-- ABS side — a narrower strip front-centre -->
+              <g class="mpart" id="m-abs-s" onclick="selectMuscle('abs')">
+                <ellipse cx="46" cy="95" rx="6" ry="18" fill="#a0aec0"/>
+              </g>
+
+              <!-- GLUTE — rear lower torso -->
+              <g class="mpart" id="m-glute-s" onclick="selectMuscle('glutes')">
+                <ellipse cx="70" cy="133" rx="13" ry="14" fill="#a0aec0"/>
+              </g>
+
+              <!-- QUAD (side view) — front of thigh -->
+              <g class="mpart" id="m-quad-s" onclick="selectMuscle('quads')">
+                <ellipse cx="50" cy="175" rx="13" ry="32" fill="#a0aec0"/>
+              </g>
+
+              <!-- HAMSTRING (side view) — back of thigh -->
+              <g class="mpart" id="m-ham-s" onclick="selectMuscle('hamstrings')">
+                <ellipse cx="68" cy="175" rx="11" ry="30" fill="#a0aec0"/>
+              </g>
+
+              <!-- CALF (side view) — back of lower leg, gastrocnemius bulge -->
+              <g class="mpart" id="m-calf-s" onclick="selectMuscle('calves')">
+                <ellipse cx="65" cy="232" rx="10" ry="21" fill="#a0aec0"/>
+              </g>
+            </svg>
+          </div>
+
+          <!-- ── BACK VIEW ── (same coordinate space as front) -->
           <div>
             <div class="mslbl">Back</div>
             <svg class="muscle-svg" viewBox="0 0 120 280" xmlns="http://www.w3.org/2000/svg">
               <ellipse cx="60" cy="22" rx="16" ry="18" fill="#c8c8c8" opacity=".35"/>
               <rect x="54" y="38" width="12" height="12" rx="3" fill="#c8c8c8" opacity=".35"/>
-              <g class="mpart" id="m-trap"    onclick="selectMuscle('traps')"><polygon points="60,40 36,62 84,62" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-rdelt-l" onclick="selectMuscle('reardelts')"><ellipse cx="33" cy="60" rx="9" ry="9" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-rdelt-r" onclick="selectMuscle('reardelts')"><ellipse cx="87" cy="60" rx="9" ry="9" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-lat-l"   onclick="selectMuscle('lats')"><ellipse cx="44" cy="84" rx="13" ry="20" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-lat-r"   onclick="selectMuscle('lats')"><ellipse cx="76" cy="84" rx="13" ry="20" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-lb"      onclick="selectMuscle('lowerback')"><rect x="50" y="100" width="20" height="20" rx="4" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-tri-l"   onclick="selectMuscle('triceps')"><ellipse cx="29" cy="83" rx="7" ry="16" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-tri-r"   onclick="selectMuscle('triceps')"><ellipse cx="91" cy="83" rx="7" ry="16" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-fore-bl" onclick="selectMuscle('forearms')"><ellipse cx="25" cy="116" rx="6" ry="14" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-fore-br" onclick="selectMuscle('forearms')"><ellipse cx="95" cy="116" rx="6" ry="14" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-glute-l" onclick="selectMuscle('glutes')"><ellipse cx="49" cy="130" rx="14" ry="14" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-glute-r" onclick="selectMuscle('glutes')"><ellipse cx="71" cy="130" rx="14" ry="14" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-ham-l"   onclick="selectMuscle('hamstrings')"><ellipse cx="49" cy="178" rx="13" ry="28" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-ham-r"   onclick="selectMuscle('hamstrings')"><ellipse cx="71" cy="178" rx="13" ry="28" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-calf-bl" onclick="selectMuscle('calves')"><ellipse cx="49" cy="232" rx="9" ry="20" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-calf-br" onclick="selectMuscle('calves')"><ellipse cx="71" cy="232" rx="9" ry="20" fill="#a0aec0"/></g>
               <ellipse cx="22" cy="136" rx="6" ry="7" fill="#c8c8c8" opacity=".3"/>
               <ellipse cx="98" cy="136" rx="6" ry="7" fill="#c8c8c8" opacity=".3"/>
               <ellipse cx="49" cy="258" rx="10" ry="6" fill="#c8c8c8" opacity=".3"/>
               <ellipse cx="71" cy="258" rx="10" ry="6" fill="#c8c8c8" opacity=".3"/>
               <rect x="47" y="118" width="26" height="14" rx="4" fill="#c8c8c8" opacity=".3"/>
+
+              <!-- TRAPS: triangle from neck base to shoulder caps.
+                   polygon points are listed clockwise: tip-top, left shoulder, right shoulder. -->
+              <g class="mpart" id="m-trap" onclick="selectMuscle('traps')">
+                <polygon points="60,40 34,63 86,63" fill="#a0aec0"/>
+              </g>
+
+              <!-- REAR DELTS -->
+              <g class="mpart" id="m-rdelt-l" onclick="selectMuscle('reardelts')"><ellipse cx="32" cy="60" rx="10" ry="10" fill="#a0aec0"/></g>
+              <g class="mpart" id="m-rdelt-r" onclick="selectMuscle('reardelts')"><ellipse cx="88" cy="60" rx="10" ry="10" fill="#a0aec0"/></g>
+
+              <!-- LATS: wide ellipses fanning out from mid-back to armpit.
+                   cx=44/76 push them to the sides. ry=22 makes them tall and fan-like. -->
+              <g class="mpart" id="m-lat-l" onclick="selectMuscle('lats')"><ellipse cx="43" cy="85" rx="14" ry="22" fill="#a0aec0"/></g>
+              <g class="mpart" id="m-lat-r" onclick="selectMuscle('lats')"><ellipse cx="77" cy="85" rx="14" ry="22" fill="#a0aec0"/></g>
+
+              <!-- LOWER BACK / ERECTORS: narrow rect down the spine -->
+              <g class="mpart" id="m-lb" onclick="selectMuscle('lowerback')"><rect x="49" y="99" width="22" height="22" rx="4" fill="#a0aec0"/></g>
+
+              <!-- TRICEPS: back of upper arm -->
+              <g class="mpart" id="m-tri-l" onclick="selectMuscle('triceps')"><ellipse cx="28" cy="83" rx="7" ry="17" fill="#a0aec0"/></g>
+              <g class="mpart" id="m-tri-r" onclick="selectMuscle('triceps')"><ellipse cx="92" cy="83" rx="7" ry="17" fill="#a0aec0"/></g>
+
+              <!-- FOREARMS back -->
+              <g class="mpart" id="m-fore-bl" onclick="selectMuscle('forearms')"><ellipse cx="24" cy="117" rx="6" ry="15" fill="#a0aec0"/></g>
+              <g class="mpart" id="m-fore-br" onclick="selectMuscle('forearms')"><ellipse cx="96" cy="117" rx="6" ry="15" fill="#a0aec0"/></g>
+
+              <!-- GLUTES: big round shapes below the lower back -->
+              <g class="mpart" id="m-glute-l" onclick="selectMuscle('glutes')"><ellipse cx="48" cy="131" rx="15" ry="15" fill="#a0aec0"/></g>
+              <g class="mpart" id="m-glute-r" onclick="selectMuscle('glutes')"><ellipse cx="72" cy="131" rx="15" ry="15" fill="#a0aec0"/></g>
+
+              <!-- HAMSTRINGS: back of thigh, ry=30 for tall coverage -->
+              <g class="mpart" id="m-ham-l" onclick="selectMuscle('hamstrings')"><ellipse cx="48" cy="178" rx="13" ry="30" fill="#a0aec0"/></g>
+              <g class="mpart" id="m-ham-r" onclick="selectMuscle('hamstrings')"><ellipse cx="72" cy="178" rx="13" ry="30" fill="#a0aec0"/></g>
+
+              <!-- CALVES back (gastrocnemius) -->
+              <g class="mpart" id="m-calf-bl" onclick="selectMuscle('calves')"><ellipse cx="48" cy="233" rx="9" ry="21" fill="#a0aec0"/></g>
+              <g class="mpart" id="m-calf-br" onclick="selectMuscle('calves')"><ellipse cx="72" cy="233" rx="9" ry="21" fill="#a0aec0"/></g>
             </svg>
           </div>
         </div>
+
+        <!-- Intensity legend: explains what the colours mean -->
+        <div class="intensity-legend">
+          <span>7-day intensity:</span>
+          <div class="ileg-swatch" style="background:#a0aec0"></div><span>untrained</span>
+          <div class="ileg-swatch" style="background:#60a5fa"></div><span>1–2 sets</span>
+          <div class="ileg-swatch" style="background:#f59e0b"></div><span>3–5 sets</span>
+          <div class="ileg-swatch" style="background:#ef4444"></div><span>6+ sets</span>
+        </div>
+
+        <!-- Info panel: updated by selectMuscle() on click -->
         <div class="muscle-info" id="muscle-info">
           <div class="mi-hint">Tap a muscle to see relevant exercises</div>
         </div>
@@ -467,20 +647,23 @@ const MOVEMENTS = {
 };
 
 const MUSCLE_MAP = {
-  chest:      { ids: ['m-chest-l','m-chest-r'],                               label: 'Chest (pectorals)',       moves: ['Incline DB press','Flat DB press','Dips','DB Floor Press','Tricep Push-ups'] },
-  shoulders:  { ids: ['m-fdelt-l','m-fdelt-r'],                               label: 'Shoulders (front delt)',  moves: ['DB Overhead Press','DB Front Raise','DB Lateral Raise','Incline DB press'] },
-  reardelts:  { ids: ['m-rdelt-l','m-rdelt-r'],                               label: 'Rear delts',              moves: ['DB face pull','DB chest-supported row','DB row (single arm)'] },
-  traps:      { ids: ['m-trap'],                                              label: 'Trapezius',               moves: ['DB face pull','DB chest-supported row','Pull-ups','Inverted row'] },
-  lats:       { ids: ['m-lat-l','m-lat-r'],                                   label: 'Lats',                    moves: ['Pull-ups','Chin-ups','DB row (single arm)','Inverted row'] },
-  biceps:     { ids: ['m-bic-l','m-bic-r'],                                   label: 'Biceps',                  moves: ['Chin-ups','DB hammer curl','DB incline bicep curl','DB Zottman curl'] },
-  triceps:    { ids: ['m-tri-l','m-tri-r'],                                   label: 'Triceps',                 moves: ['Dips','DB Skull Crusher','DB Overhead Tricep Extension','Tricep Push-ups'] },
-  abs:        { ids: ['m-abs','m-obl-l','m-obl-r'],                           label: 'Core / Abs',              moves: ['Hanging Knee Raise','Hanging Leg Raise','V-ups','DB Russian Twist','Ab wheel rollout','Hollow body hold'] },
-  lowerback:  { ids: ['m-lb'],                                                label: 'Lower back / Erectors',   moves: ['DB Romanian Deadlift','Jefferson curl'] },
-  quads:      { ids: ['m-quad-l','m-quad-r'],                                 label: 'Quadriceps',              moves: ['Pistol Squat','DB Explosive Split Squat','DB Bulgarian split squat','DB Goblet squat','Step-ups'] },
-  hamstrings: { ids: ['m-ham-l','m-ham-r'],                                   label: 'Hamstrings',              moves: ['DB Romanian Deadlift','Nordic curl','DB Bulgarian split squat'] },
-  glutes:     { ids: ['m-glute-l','m-glute-r'],                               label: 'Glutes',                  moves: ['DB Romanian Deadlift','DB Explosive Split Squat','DB Bulgarian split squat','Step-ups'] },
-  calves:     { ids: ['m-calf-fl','m-calf-fr','m-calf-bl','m-calf-br'],       label: 'Calves',                  moves: ['DB / One Leg Calf Raise'] },
-  forearms:   { ids: ['m-fore-fl','m-fore-fr','m-fore-bl','m-fore-br'],       label: 'Forearms',                moves: ['DB Zottman curl','Pull-ups','DB row (single arm)'] }
+  // ids: all SVG element IDs that belong to this muscle group across ALL three views.
+  // When a muscle is selected, every id in this list gets highlighted; everything else dims.
+  // The side view adds new IDs (m-*-s suffix) for the same logical muscle.
+  chest:      { ids: ['m-chest-l','m-chest-r','m-chest-s'],                            label: 'Chest (pectorals)',       moves: ['Incline DB press','Flat DB press','Dips','DB Floor Press','Tricep Push-ups'] },
+  shoulders:  { ids: ['m-fdelt-l','m-fdelt-r','m-sdelt'],                              label: 'Shoulders',               moves: ['DB Overhead Press','DB Front Raise','DB Lateral Raise','Incline DB press'] },
+  reardelts:  { ids: ['m-rdelt-l','m-rdelt-r'],                                        label: 'Rear delts',              moves: ['DB face pull','DB chest-supported row','DB row (single arm)'] },
+  traps:      { ids: ['m-trap'],                                                       label: 'Trapezius',               moves: ['DB face pull','DB chest-supported row','Pull-ups','Inverted row'] },
+  lats:       { ids: ['m-lat-l','m-lat-r','m-lat-s'],                                  label: 'Lats',                    moves: ['Pull-ups','Chin-ups','DB row (single arm)','Inverted row'] },
+  biceps:     { ids: ['m-bic-l','m-bic-r','m-bic-s'],                                  label: 'Biceps',                  moves: ['Chin-ups','DB hammer curl','DB incline bicep curl','DB Zottman curl'] },
+  triceps:    { ids: ['m-tri-l','m-tri-r','m-tri-s'],                                  label: 'Triceps',                 moves: ['Dips','DB Skull Crusher','DB Overhead Tricep Extension','Tricep Push-ups'] },
+  abs:        { ids: ['m-abs','m-obl-l','m-obl-r','m-abs-s'],                          label: 'Core / Abs',              moves: ['Hanging Knee Raise','Hanging Leg Raise','V-ups','DB Russian Twist','Ab wheel rollout','Hollow body hold'] },
+  lowerback:  { ids: ['m-lb','m-lb-s'],                                                label: 'Lower back / Erectors',   moves: ['DB Romanian Deadlift','Jefferson curl'] },
+  quads:      { ids: ['m-quad-l','m-quad-r','m-quad-s'],                               label: 'Quadriceps',              moves: ['Pistol Squat','DB Explosive Split Squat','DB Bulgarian split squat','DB Goblet squat','Step-ups'] },
+  hamstrings: { ids: ['m-ham-l','m-ham-r','m-ham-s'],                                  label: 'Hamstrings',              moves: ['DB Romanian Deadlift','Nordic curl','DB Bulgarian split squat'] },
+  glutes:     { ids: ['m-glute-l','m-glute-r','m-glute-s'],                            label: 'Glutes',                  moves: ['DB Romanian Deadlift','DB Explosive Split Squat','DB Bulgarian split squat','Step-ups'] },
+  calves:     { ids: ['m-calf-fl','m-calf-fr','m-calf-bl','m-calf-br','m-calf-s'],     label: 'Calves',                  moves: ['DB / One Leg Calf Raise'] },
+  forearms:   { ids: ['m-fore-fl','m-fore-fr','m-fore-bl','m-fore-br'],                label: 'Forearms',                moves: ['DB Zottman curl','Pull-ups','DB row (single arm)'] }
 };
 
 const GROUP_COLORS = { push:'#E1F5EE', pull:'#E6F1FB', core:'#FAEEDA', lower:'#FAECE7', flexibility:'#FBEAF0' };
@@ -519,7 +702,7 @@ function showTab(t) {
   document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
   document.querySelector(`.tab[onclick="showTab('${t}')"]`).classList.add('active');
   document.getElementById('pane-' + t).classList.add('active');
-  if (t === 'fitness')   { renderSessionLog(); populateChartDropdown(); }
+  if (t === 'fitness')   { renderSessionLog(); populateChartDropdown(); applyIntensityColors(); }
   if (t === 'nutrition') { renderNutrition(); }
 }
 
@@ -582,7 +765,6 @@ function addHabit() {
 }
 
 function deleteHabit(id) {
-  if (!confirm('Remove this habit?')) return;
   state.habits = state.habits.filter(h => h.id !== id); save(); render();
 }
 
@@ -617,7 +799,6 @@ function addGoal() {
 }
 
 function deleteGoal(id) {
-  if (!confirm('Remove this goal?')) return;
   state.goals = state.goals.filter(g=>g.id!==id); save(); render();
 }
 
@@ -704,26 +885,98 @@ function renderMetrics(td) {
 }
 
 
-// ── 9. MUSCLE DIAGRAM ─────────────────────────────────────────────────
+// ── 9. MUSCLE DIAGRAM + INTENSITY COLOURING ──────────────────────────
 
+/*
+  Maps each movement to its primary muscle key so we can count sets per muscle.
+  When a session is logged, session.movement → muscleKey → set count.
+*/
+const MOVEMENT_TO_MUSCLE = {
+  'Incline DB press':'chest','Flat DB press':'chest','Dips':'chest','DB Floor Press':'chest','Tricep Push-ups':'chest',
+  'DB Overhead Press':'shoulders','DB Front Raise':'shoulders','DB Lateral Raise':'shoulders',
+  'DB face pull':'reardelts','DB chest-supported row':'reardelts',
+  'Pull-ups':'lats','Chin-ups':'lats','DB row (single arm)':'lats','Inverted row':'lats',
+  'DB hammer curl':'biceps','DB incline bicep curl':'biceps','DB Zottman curl':'biceps',
+  'DB Skull Crusher':'triceps','DB Overhead Tricep Extension':'triceps',
+  'Hanging Knee Raise':'abs','Hanging Leg Raise':'abs','V-ups':'abs','DB Russian Twist':'abs',
+  'Plank':'abs','Ab wheel rollout':'abs','Hollow body hold':'abs',
+  'DB Romanian Deadlift':'hamstrings','Nordic curl':'hamstrings',
+  'DB Bulgarian split squat':'glutes','DB Explosive Split Squat':'glutes','Step-ups':'glutes',
+  'Pistol Squat':'quads','DB Goblet squat':'quads',
+  'DB / One Leg Calf Raise':'calves',
+  'Jefferson curl':'lowerback',
+};
+
+/*
+  intensityColor(sets) — maps total sets in the last 7 days to a colour.
+  0 → neutral grey (untrained)
+  1-2 → blue (light)
+  3-5 → amber (moderate)
+  6+ → red (high volume)
+  This is just an if/else chain — pick the bracket, return the hex.
+*/
+function intensityColor(sets) {
+  if (sets === 0) return '#a0aec0';
+  if (sets <= 2)  return '#60a5fa';
+  if (sets <= 5)  return '#f59e0b';
+  return '#ef4444';
+}
+
+/*
+  applyIntensityColors()
+  1. Filter sessions to last 7 days.
+  2. Sum sets per muscle key.
+  3. For each key, find its SVG element IDs, find the shape inside each <g>,
+     and call setAttribute('fill', color) to paint it.
+  Why setAttribute? Because each muscle has a DIFFERENT colour — we can't
+  express "muscle X gets colour Y" with a CSS class alone. We need per-element
+  values, which means reaching into the DOM and setting the fill directly.
+  CSS .highlight still wins because it uses !important.
+*/
+function applyIntensityColors() {
+  const cutoff = new Date(Date.now() - 7 * DAY_MS).toISOString().slice(0, 10);
+  const setsByMuscle = {};
+  getSessions()
+    .filter(s => s.date >= cutoff)
+    .forEach(s => {
+      const key = MOVEMENT_TO_MUSCLE[s.movement];
+      if (key) setsByMuscle[key] = (setsByMuscle[key] || 0) + s.sets.length;
+    });
+
+  Object.entries(MUSCLE_MAP).forEach(([key, info]) => {
+    const color = intensityColor(setsByMuscle[key] || 0);
+    info.ids.forEach(id => {
+      const el = document.getElementById(id); if (!el) return;
+      // The <g> tag groups elements but has no fill itself.
+      // querySelector('[fill]') finds the first child with a fill attribute (the actual shape).
+      const shape = el.querySelector('[fill]');
+      if (shape) shape.setAttribute('fill', color);
+    });
+  });
+}
+
+/*
+  selectMuscle(key) — called by onclick on each SVG part.
+  Adds .highlight to matching IDs (green, !important overrides intensity colour),
+  .dim to everything else (low opacity fade).
+  Then updates the info panel with exercise badges.
+*/
 function selectMuscle(key) {
   const info = MUSCLE_MAP[key]; if (!info) return;
-  // Highlight matching SVG parts, dim everything else
   document.querySelectorAll('.mpart').forEach(el => {
-    el.classList.remove('highlight','dim');
+    el.classList.remove('highlight', 'dim');
     el.classList.add(info.ids.includes(el.id) ? 'highlight' : 'dim');
   });
-  // Update info panel
   document.getElementById('muscle-info').innerHTML = `
     <div class="mi-name">${info.label}</div>
-    <div style="margin-top:6px">${info.moves.map(m=>
+    <div style="margin-top:6px">${info.moves.map(m =>
       `<span class="badge" style="margin-right:4px;margin-bottom:4px;display:inline-block;cursor:pointer"
              onclick="prefillMovement('${m}')">${m}</span>`
     ).join('')}</div>`;
 }
 
+// Clicking a badge pre-fills the logger and scrolls to it
 function prefillMovement(movement) {
-  // Find which group this movement belongs to, then pre-fill the logger
   for (const [group, moves] of Object.entries(MOVEMENTS)) {
     if (moves.includes(movement)) {
       document.getElementById('muscle-select').value = group;
@@ -779,7 +1032,7 @@ function logExercise() {
   document.getElementById('sets-input').value='';
   document.getElementById('sets-container').innerHTML='';
   document.getElementById('session-notes').value='';
-  renderSessionLog(); populateChartDropdown();
+  renderSessionLog(); populateChartDropdown(); applyIntensityColors();
   alert(`Logged: ${mv} — ${sets.length} set${sets.length>1?'s':''}`);
 }
 
@@ -820,10 +1073,8 @@ function renderSessionLog() {
 }
 
 function deleteSession(originalIdx) {
-  if (!confirm('Remove this session?')) return;
   const sessions=getSessions(); sessions.splice(originalIdx,1); saveSessions(sessions);
-  renderSessionLog(); populateChartDropdown();
-  const mv=document.getElementById('chart-movement-select').value; if (mv) renderChart(mv);
+  renderSessionLog(); populateChartDropdown(); applyIntensityColors();
 }
 
 
