@@ -648,10 +648,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <div><label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">Fat (g)</label><input type="number" class="ainp" id="t-fat" placeholder="70" style="width:100%" onchange="saveTargets()"/></div>
       </div>
     </div>
- <div class="card" style="margin-top:var(--gap)">
+  <div class="card" style="margin-top:var(--gap)">
       <div class="ctitle">📝 Nutrition notes</div>
       <textarea class="notes-textarea" id="notes-nutrition" placeholder="Meal prep ideas, how you felt, patterns you notice…" oninput="saveNote('nutrition')"></textarea>
-      <div class="notes-saved-hint" id="notes-nutrition-hint">
+      <div class="notes-saved-hint" id="notes-nutrition-hint"></div>
+    </div>
   </div>
 
 <!-- MEAL MODAL -->
@@ -672,7 +673,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   </div>
 </div>
 
-     <!-- TUTORING -->
+  <!-- TUTORING -->
   <div class="pane" id="pane-tutoring">
     <div class="slbl">Overview</div>
     <div class="tutor-metrics" id="tutor-metrics"></div>
@@ -743,8 +744,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <textarea class="notes-textarea" id="notes-appeal" placeholder="Personal notes, goals, reflections on your appeal journey…" oninput="saveNote('appeal')"></textarea>
       <div class="notes-saved-hint" id="notes-appeal-hint"></div>
     </div>
-  </div>     
- </div>
+  </div>
+</div>
 <!-- =====================================================================
      JAVASCRIPT — all logic lives here, after the HTML
      Sections: 1.Constants  2.Tabs  3.Home render  4.Habits  5.Goals
