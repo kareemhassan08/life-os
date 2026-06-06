@@ -216,6 +216,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .cpaid-badge.unpaid { background: var(--al); color: #854F0B; }
 .tutor-modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; align-items: center; justify-content: center; }
 .tutor-modal-bg.open { display: flex; }
+
+     /* ── 16. NOTES CARDS ──────────────────────────────────────────────── */
+.notes-textarea { width:100%; min-height:90px; resize:vertical; font-size:12px; line-height:1.6; font-family:inherit; background:var(--bg); color:var(--text); border:.5px solid var(--border2); border-radius:var(--r); padding:8px 10px; outline:none; }
+.notes-textarea:focus { border-color:var(--g); }
+.notes-saved-hint { font-size:10px; color:var(--text3); margin-top:4px; min-height:14px; }
+
+/* ── 17. APPEAL TAB ───────────────────────────────────────────────── */
+.appeal-checks { display: flex; flex-direction: column; gap: 0; }
+.appeal-check-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: .5px solid var(--border); }
+.appeal-check-row:last-child { border-bottom: none; }
+.appeal-check-row input[type="checkbox"] { width:16px; height:16px; accent-color: var(--g); cursor:pointer; flex-shrink:0; }
+.appeal-check-label { font-size: 13px; color: var(--text); flex: 1; }
+.appeal-streak-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
+.appeal-day { aspect-ratio:1; border-radius:4px; display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text3); }
+.appeal-day.full  { background: var(--g);  color:#fff; }
+.appeal-day.partial { background: var(--am); color:#fff; }
+.appeal-day.none  { background: var(--bg); }
+.appeal-day.future { background: transparent; border:.5px solid var(--border); }
      
 </style>
 </head>
@@ -232,6 +250,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <button class="tab" onclick="showTab('fitness')">Fitness</button>
     <button class="tab" onclick="showTab('nutrition')">Nutrition</button>
     <button class="tab" onclick="showTab('tutoring')">Tutoring</button>
+    <button class="tab" onclick="showTab('appeal')">Appeal</button>
   </div>
 
   <!-- HOME -->
@@ -572,14 +591,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       </div>
     </div>
 
-    <div class="twocol">
+<div class="twocol">
       <div class="card">
         <div class="ctitle" style="justify-content:space-between">
           <span>📋 Session log</span>
-          <span id="session-count" style="font-size:11px;color:var(--text3)"></span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span id="session-count" style="font-size:11px;color:var(--text3)"></span>
+            <button class="abtn" id="session-expand-btn" onclick="toggleSessionLog()" style="font-size:11px;padding:3px 9px">Show all</button>
+          </div>
         </div>
         <div id="session-log-list"><p class="empty-state">No sessions logged yet.</p></div>
       </div>
+     
       <div class="card">
         <div class="ctitle">📈 Progress</div>
         <select id="chart-movement-select" class="ainp" style="width:100%;margin-bottom:12px" onchange="renderChart(this.value)">
@@ -589,6 +612,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <p id="no-data-msg" style="font-size:12px;color:var(--text3);text-align:center;padding:1rem 0;display:none">No data for this movement yet.</p>
         <p id="chart-hint"  style="font-size:12px;color:var(--text3);text-align:center;padding:1rem 0">Select a movement to see progress.</p>
       </div>
+    </div>
+<div class="card" style="margin-top:var(--gap)">
+      <div class="ctitle">📝 Fitness notes</div>
+      <textarea class="notes-textarea" id="notes-fitness" placeholder="Training notes, cues, progress observations…" oninput="saveNote('fitness')"></textarea>
+      <div class="notes-saved-hint" id="notes-fitness-hint"></div>
     </div>
   </div>
 
@@ -624,7 +652,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       </div>
     </div>
   </div>
-
+<div class="card" style="margin-top:var(--gap)">
+      <div class="ctitle">📝 Nutrition notes</div>
+      <textarea class="notes-textarea" id="notes-nutrition" placeholder="Meal prep ideas, how you felt, patterns you notice…" oninput="saveNote('nutrition')"></textarea>
+      <div class="notes-saved-hint" id="notes-nutrition-hint"></div>
+    </div>
 </div>
 
 <!-- MEAL MODAL -->
@@ -683,6 +715,40 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     </div>
   </div>
 
+<!-- APPEAL -->
+  <div class="pane" id="pane-appeal">
+    <div class="slbl">Daily checklist</div>
+    <div class="twocol" style="margin-bottom:var(--gap)">
+      <div class="card">
+        <div class="ctitle" style="justify-content:space-between">
+          <span>✓ Today's checklist</span>
+          <span id="appeal-date" style="font-size:11px;color:var(--text3)"></span>
+        </div>
+        <div class="appeal-checks" id="appeal-checks"></div>
+        <div class="adrow" style="margin-top:10px">
+          <input class="ainp" id="appeal-new-item" placeholder="Add checklist item…" onkeydown="if(event.key==='Enter')addAppealItem()"/>
+          <button class="abtn" onclick="addAppealItem()">+</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ctitle" style="justify-content:space-between">
+          <span>📊 Consistency (28 days)</span>
+          <span id="appeal-pct" style="font-size:13px;font-weight:500;color:var(--g)"></span>
+        </div>
+        <div class="appeal-streak-grid" id="appeal-streak-grid"></div>
+        <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><div style="width:10px;height:10px;border-radius:2px;background:var(--g)"></div>All done</div>
+          <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><div style="width:10px;height:10px;border-radius:2px;background:var(--am)"></div>Partial</div>
+          <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><div style="width:10px;height:10px;border-radius:2px;background:var(--bg)"></div>Missed</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ctitle">📝 Appeal notes</div>
+      <textarea class="notes-textarea" id="notes-appeal" placeholder="Personal notes, goals, reflections on your appeal journey…" oninput="saveNote('appeal')"></textarea>
+      <div class="notes-saved-hint" id="notes-appeal-hint"></div>
+    </div>
+  </div>     
 <!-- =====================================================================
      JAVASCRIPT — all logic lives here, after the HTML
      Sections: 1.Constants  2.Tabs  3.Home render  4.Habits  5.Goals
@@ -762,9 +828,10 @@ function showTab(t) {
   document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
   document.querySelector(`.tab[onclick="showTab('${t}')"]`).classList.add('active');
   document.getElementById('pane-' + t).classList.add('active');
-  if (t === 'fitness')   { renderSessionLog(); populateChartDropdown(); applyIntensityColors(); }
-  if (t === 'nutrition') { renderNutrition(); }
-  if (t === 'tutoring')  { renderTutoring(); }
+  if (t === 'fitness')   { renderSessionLog(); populateChartDropdown(); applyIntensityColors(); loadNote('fitness'); }
+  if (t === 'nutrition') { renderNutrition(); loadNote('nutrition'); }
+  if (t === 'tutoring')  { renderTutoring(); loadNote('tutoring'); }
+  if (t === 'appeal')    { renderAppeal(); loadNote('appeal'); }
 }
 
 
@@ -1100,27 +1167,32 @@ function logExercise() {
 
 // ── 11. SESSION LOG ───────────────────────────────────────────────────
 
-function renderSessionLog() {
-  const sessions=getSessions();
-  const el=document.getElementById('session-log-list');
-  document.getElementById('session-count').textContent=sessions.length?`${sessions.length} total`:'';
-  if (!sessions.length) { el.innerHTML='<p class="empty-state">No sessions logged yet.</p>'; return; }
+let sessionLogExpanded = false;
 
-  // Display newest first.
-  // KEY FIX: reversedIdx is the position in the REVERSED array.
-  // originalIdx = sessions.length - 1 - reversedIdx maps back to the original array
-  // for correct splice() in deleteSession().
-  el.innerHTML = sessions.slice().reverse().map((s, reversedIdx) => {
+function toggleSessionLog() {
+  sessionLogExpanded = !sessionLogExpanded;
+  document.getElementById('session-expand-btn').textContent = sessionLogExpanded ? 'Collapse' : 'Show all';
+  renderSessionLog();
+}
+
+function renderSessionLog() {
+  const sessions = getSessions();
+  const el = document.getElementById('session-log-list');
+  document.getElementById('session-count').textContent = sessions.length ? `${sessions.length} total` : '';
+  if (!sessions.length) { el.innerHTML = '<p class="empty-state">No sessions logged yet.</p>'; return; }
+  const reversed = sessions.slice().reverse();
+  const visible  = sessionLogExpanded ? reversed : reversed.slice(0, 5);
+  el.innerHTML = visible.map((s, reversedIdx) => {
     const originalIdx = sessions.length - 1 - reversedIdx;
-    const setsStr=s.sets.map(st=>`${st.reps}r @ ${st.weight}`).join(' · ');
-    const totalReps=s.sets.reduce((a,b)=>a+b.reps,0);
-    const gc=GROUP_COLORS[s.muscleGroup]||'#f5f5f4', gt=GROUP_TEXT[s.muscleGroup]||'var(--text2)';
+    const setsStr  = s.sets.map(st => `${st.reps}r @ ${st.weight}`).join(' · ');
+    const totalReps = s.sets.reduce((a, b) => a + b.reps, 0);
+    const gc = GROUP_COLORS[s.muscleGroup] || '#f5f5f4', gt = GROUP_TEXT[s.muscleGroup] || 'var(--text2)';
     return `<div class="sess-item">
       <div class="sess-head">
         <span class="sess-title">${s.movement}</span>
         <div style="display:flex;align-items:center;gap:8px">
           <span class="sess-date">${fmt(s.date)}</span>
-          <button class="delbtn" onclick="deleteSession(${originalIdx})">✕</button>
+          <button class="delbtn" onclick="deleteSession(${originalIdx})">x</button>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
@@ -1128,11 +1200,13 @@ function renderSessionLog() {
         <span class="sess-detail">${s.sets.length} sets · ${totalReps} total reps</span>
       </div>
       <div class="sess-detail" style="color:var(--text3)">${setsStr}</div>
-      ${s.notes?`<div class="sess-detail" style="font-style:italic;margin-top:2px">${s.notes}</div>`:''}
+      ${s.notes ? `<div class="sess-detail" style="font-style:italic;margin-top:2px">${s.notes}</div>` : ''}
     </div>`;
   }).join('');
+  if (!sessionLogExpanded && sessions.length > 5) {
+    el.innerHTML += `<p style="font-size:11px;color:var(--text3);text-align:center;padding-top:6px">Showing 5 of ${sessions.length} — click "Show all" to expand</p>`;
+  }
 }
-
 function deleteSession(originalIdx) {
   const sessions=getSessions(); sessions.splice(originalIdx,1); saveSessions(sessions);
   renderSessionLog(); populateChartDropdown(); applyIntensityColors();
@@ -1334,7 +1408,103 @@ function deleteTutorClient(id) {
 
 document.getElementById('tutor-client-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeTutorModal(); });
 document.getElementById('tutor-session-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeTutorSessionModal(); });
-// ── 14. INIT ──────────────────────────────────────────────────────────
+
+ // ── NOTES ─────────────────────────────────────────────────────────────
+
+const NOTE_KEYS = { fitness:'lifeos-note-fitness', nutrition:'lifeos-note-nutrition', tutoring:'lifeos-note-tutoring', appeal:'lifeos-note-appeal' };
+let noteTimers = {};
+
+function saveNote(tab) {
+  const ta = document.getElementById('notes-' + tab); if (!ta) return;
+  localStorage.setItem(NOTE_KEYS[tab], ta.value);
+  const hint = document.getElementById('notes-' + tab + '-hint');
+  if (hint) { hint.textContent = 'Saved'; clearTimeout(noteTimers[tab]); noteTimers[tab] = setTimeout(() => { hint.textContent = ''; }, 1500); }
+}
+
+function loadNote(tab) {
+  const ta = document.getElementById('notes-' + tab); if (!ta) return;
+  ta.value = localStorage.getItem(NOTE_KEYS[tab]) || '';
+}    
+ // ── APPEAL TAB ────────────────────────────────────────────────────────
+
+const getAppealState = () => JSON.parse(localStorage.getItem('appeal-state') || 'null') || {
+  items: [
+    'Skincare morning routine',
+    'Outfit intentional (no lazy fits)',
+    'Grooming check before leaving',
+    'Posture check-ins (3x today)',
+    'Walk 20+ min'
+  ],
+  log: {}   // "YYYY-MM-DD" -> { checked: [indices of completed items] }
+};
+const saveAppealState = s => localStorage.setItem('appeal-state', JSON.stringify(s));
+
+function renderAppeal() {
+  const s = getAppealState();
+  const td = today();
+  document.getElementById('appeal-date').textContent =
+    new Date().toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+
+  const todayLog = s.log[td] || { checked: [] };
+
+  // Checklist
+  document.getElementById('appeal-checks').innerHTML = s.items.map((item, i) => {
+    const done = todayLog.checked.includes(i);
+    return `<div class="appeal-check-row">
+      <input type="checkbox" ${done ? 'checked' : ''} onchange="toggleAppealItem(${i}, this.checked)"/>
+      <span class="appeal-check-label" style="${done ? 'text-decoration:line-through;color:var(--text3)' : ''}">${item}</span>
+      <button class="delbtn" onclick="deleteAppealItem(${i})">x</button>
+    </div>`;
+  }).join('');
+
+  // 28-day grid
+  const grid = document.getElementById('appeal-streak-grid');
+  let totalDone = 0, totalDays = 0;
+  grid.innerHTML = Array.from({ length: 28 }, (_, i) => {
+    const d = new Date(Date.now() - (27 - i) * DAY_MS).toISOString().slice(0, 10);
+    const isFuture = d > td;
+    if (isFuture) return `<div class="appeal-day future"></div>`;
+    totalDays++;
+    const log = s.log[d] || { checked: [] };
+    const pct = s.items.length ? log.checked.length / s.items.length : 0;
+    if (pct === 1) { totalDone++; return `<div class="appeal-day full" title="${d}">✓</div>`; }
+    if (pct > 0)   { totalDone += pct; return `<div class="appeal-day partial" title="${d}">${log.checked.length}/${s.items.length}</div>`; }
+    return `<div class="appeal-day none" title="${d}"></div>`;
+  }).join('');
+
+  const pct = totalDays ? Math.round((totalDone / totalDays) * 100) : 0;
+  document.getElementById('appeal-pct').textContent = totalDays ? `${pct}% avg` : '';
+}
+
+function toggleAppealItem(idx, checked) {
+  const s = getAppealState();
+  const td = today();
+  if (!s.log[td]) s.log[td] = { checked: [] };
+  if (checked) { if (!s.log[td].checked.includes(idx)) s.log[td].checked.push(idx); }
+  else { s.log[td].checked = s.log[td].checked.filter(i => i !== idx); }
+  saveAppealState(s); renderAppeal();
+}
+
+function addAppealItem() {
+  const inp = document.getElementById('appeal-new-item');
+  const val = inp.value.trim(); if (!val) return;
+  const s = getAppealState();
+  s.items.push(val);
+  saveAppealState(s); inp.value = ''; renderAppeal();
+}
+
+function deleteAppealItem(idx) {
+  const s = getAppealState();
+  s.items.splice(idx, 1);
+  // Remap all logs to remove the deleted index
+  Object.keys(s.log).forEach(d => {
+    s.log[d].checked = s.log[d].checked
+      .filter(i => i !== idx)
+      .map(i => i > idx ? i - 1 : i);
+  });
+  saveAppealState(s); renderAppeal();
+}
+     // ── 14. INIT ──────────────────────────────────────────────────────────
 
 render();
 populateChartDropdown();
