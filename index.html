@@ -196,6 +196,27 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .badge { font-size: 10px; padding: 2px 7px; border-radius: 20px; background: var(--bg); color: var(--text2); border: .5px solid var(--border); }
 .empty-state { font-size: 12px; color: var(--text3); padding: 8px 0; }
 
+/* ── 15. TUTORING TAB ─────────────────────────────────────────────── */
+.tutor-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px,1fr)); gap: var(--gap); margin-bottom: 1.5rem; }
+.tutor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px,1fr)); gap: var(--gap); margin-bottom: 1.5rem; }
+.client-card { background: var(--bg2); border: .5px solid var(--border); border-radius: var(--rl); padding: 1rem 1.25rem; }
+.client-card.unpaid { border-left: 3px solid var(--am); }
+.client-card.paid   { border-left: 3px solid var(--g); }
+.client-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.client-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: var(--text2); flex-shrink: 0; }
+.client-name { font-size: 14px; font-weight: 500; color: var(--text); margin: 0; }
+.client-sub  { font-size: 11px; color: var(--text2); margin: 0; }
+.client-meta { font-size: 12px; color: var(--text2); margin-bottom: 6px; display: flex; flex-direction: column; gap: 3px; }
+.client-note { font-size: 11px; color: var(--text2); background: var(--bg); border-radius: var(--r); padding: 5px 8px; margin-bottom: 8px; line-height: 1.5; font-style: italic; }
+.client-sessions { font-size: 11px; color: var(--text3); border-top: .5px solid var(--border); padding-top: 6px; margin-bottom: 8px; }
+.client-session-row { display: flex; justify-content: space-between; padding: 2px 0; }
+.client-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.cpaid-badge { font-size: 10px; padding: 2px 7px; border-radius: 20px; margin-left: auto; font-weight: 500; }
+.cpaid-badge.paid   { background: var(--gl); color: var(--gd); }
+.cpaid-badge.unpaid { background: var(--al); color: #854F0B; }
+.tutor-modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; align-items: center; justify-content: center; }
+.tutor-modal-bg.open { display: flex; }
+     
 </style>
 </head>
 <body>
@@ -210,6 +231,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <button class="tab active" onclick="showTab('home')">Home</button>
     <button class="tab" onclick="showTab('fitness')">Fitness</button>
     <button class="tab" onclick="showTab('nutrition')">Nutrition</button>
+    <button class="tab" onclick="showTab('tutoring')">Tutoring</button>
   </div>
 
   <!-- HOME -->
@@ -623,6 +645,44 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   </div>
 </div>
 
+     <!-- TUTORING -->
+  <div class="pane" id="pane-tutoring">
+    <div class="slbl">Overview</div>
+    <div class="tutor-metrics" id="tutor-metrics"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+      <span class="slbl" style="margin:0">Clients</span>
+      <button class="abtn primary" onclick="openTutorModal()">+ Add client</button>
+    </div>
+    <div class="tutor-grid" id="tutor-grid"></div>
+  </div>
+
+  <!-- TUTORING MODALS -->
+  <div class="tutor-modal-bg" id="tutor-client-modal">
+    <div class="modal">
+      <h3 id="tutor-modal-title">New client</h3>
+      <div class="frow"><label>Name</label><input type="text" id="tc-name" class="ainp" placeholder="Student name" style="width:100%"/></div>
+      <div class="frow"><label>Subject</label><input type="text" id="tc-subject" class="ainp" placeholder="e.g. Algebra II" style="width:100%"/></div>
+      <div class="frow"><label>Hourly rate ($)</label><input type="number" id="tc-rate" class="ainp" placeholder="50" style="width:100%"/></div>
+      <div class="frow"><label>Notes</label><textarea id="tc-notes" class="ainp" placeholder="Goals, test dates, reminders…" style="width:100%;height:70px;resize:vertical"></textarea></div>
+      <div class="modal-btns">
+        <button class="abtn" onclick="closeTutorModal()">Cancel</button>
+        <button class="abtn primary" onclick="saveTutorClient()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tutor-modal-bg" id="tutor-session-modal">
+    <div class="modal">
+      <h3>Log session</h3>
+      <div class="frow"><label>Date</label><input type="date" id="ts-date" class="ainp" style="width:100%"/></div>
+      <div class="frow"><label>Duration (minutes)</label><input type="number" id="ts-dur" class="ainp" value="60" min="15" step="15" style="width:100%"/></div>
+      <div class="modal-btns">
+        <button class="abtn" onclick="closeTutorSessionModal()">Cancel</button>
+        <button class="abtn primary" onclick="saveTutorSession()">Log</button>
+      </div>
+    </div>
+  </div>
+
 <!-- =====================================================================
      JAVASCRIPT — all logic lives here, after the HTML
      Sections: 1.Constants  2.Tabs  3.Home render  4.Habits  5.Goals
@@ -704,6 +764,7 @@ function showTab(t) {
   document.getElementById('pane-' + t).classList.add('active');
   if (t === 'fitness')   { renderSessionLog(); populateChartDropdown(); applyIntensityColors(); }
   if (t === 'nutrition') { renderNutrition(); }
+  if (t === 'tutoring')  { renderTutoring(); }
 }
 
 
@@ -1157,7 +1218,122 @@ function renderNutrition() {
   });
 }
 
+// ── 15. TUTORING ──────────────────────────────────────────────────────
 
+const getClients  = ()    => JSON.parse(localStorage.getItem('tutor-clients') || '[]');
+const saveClients = arr   => localStorage.setItem('tutor-clients', JSON.stringify(arr));
+let tutorEditingId = null;
+let tutorSessionClientId = null;
+
+function renderTutoring() {
+  const clients = getClients();
+  const totalOwed = c => c.sessions.reduce((s, sess) => s + (sess.duration / 60) * c.rate, 0);
+  const unpaid = clients.filter(c => !c.paid);
+  const collected = clients.filter(c => c.paid).reduce((s, c) => s + totalOwed(c), 0);
+  const pending   = unpaid.reduce((s, c) => s + totalOwed(c), 0);
+  document.getElementById('tutor-metrics').innerHTML = `
+    <div class="mc"><div class="lbl">Total clients</div><div class="val">${clients.length}</div></div>
+    <div class="mc warn"><div class="lbl">Awaiting payment</div><div class="val">${unpaid.length}</div></div>
+    <div class="mc good"><div class="lbl">Collected</div><div class="val">$${collected.toFixed(0)}</div></div>
+    <div class="mc warn"><div class="lbl">Pending</div><div class="val">$${pending.toFixed(0)}</div></div>`;
+  const grid = document.getElementById('tutor-grid');
+  if (!clients.length) { grid.innerHTML = '<p class="empty-state">No clients yet. Add one above.</p>'; return; }
+  grid.innerHTML = clients.map(c => {
+    const initials = c.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+    const owed = totalOwed(c);
+    const lastSess = c.sessions.length ? c.sessions[c.sessions.length - 1].date : null;
+    const sessHTML = c.sessions.length
+      ? c.sessions.slice(-3).reverse().map(s =>
+          `<div class="client-session-row"><span>${s.date}</span><span>${s.duration} min — $${((s.duration/60)*c.rate).toFixed(0)}</span></div>`
+        ).join('') : '<div style="color:var(--text3);font-size:11px">No sessions yet</div>';
+    return `<div class="client-card ${c.paid ? 'paid' : 'unpaid'}">
+      <div class="client-head">
+        <div class="client-avatar">${initials}</div>
+        <div style="flex:1;min-width:0">
+          <p class="client-name">${c.name}</p>
+          <p class="client-sub">${c.subject} · $${c.rate}/hr</p>
+        </div>
+        <span class="cpaid-badge ${c.paid ? 'paid' : 'unpaid'}">${c.paid ? 'Paid' : 'Unpaid'}</span>
+      </div>
+      <div class="client-meta">
+        <span>${lastSess ? 'Last: ' + fmt(lastSess) : 'No sessions'}</span>
+        <span>Total owed: <strong style="color:var(--text)">$${owed.toFixed(0)}</strong></span>
+      </div>
+      ${c.notes ? `<div class="client-note">${c.notes}</div>` : ''}
+      <div class="client-sessions">${sessHTML}</div>
+      <div class="client-actions">
+        <button class="abtn" onclick="openTutorSessionModal(${c.id})">+ Session</button>
+        <button class="abtn" onclick="toggleTutorPaid(${c.id})">${c.paid ? 'Mark unpaid' : 'Mark paid'}</button>
+        <button class="abtn" onclick="openTutorEditModal(${c.id})">Edit</button>
+        <button class="delbtn" onclick="deleteTutorClient(${c.id})">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openTutorModal() {
+  tutorEditingId = null;
+  document.getElementById('tutor-modal-title').textContent = 'New client';
+  ['tc-name','tc-subject','tc-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('tc-rate').value = 50;
+  document.getElementById('tutor-client-modal').classList.add('open');
+}
+function openTutorEditModal(id) {
+  const c = getClients().find(c => c.id === id); if (!c) return;
+  tutorEditingId = id;
+  document.getElementById('tutor-modal-title').textContent = 'Edit client';
+  document.getElementById('tc-name').value    = c.name;
+  document.getElementById('tc-subject').value = c.subject;
+  document.getElementById('tc-rate').value    = c.rate;
+  document.getElementById('tc-notes').value   = c.notes || '';
+  document.getElementById('tutor-client-modal').classList.add('open');
+}
+function closeTutorModal() { document.getElementById('tutor-client-modal').classList.remove('open'); }
+
+function saveTutorClient() {
+  const name = document.getElementById('tc-name').value.trim(); if (!name) return;
+  const subject = document.getElementById('tc-subject').value.trim();
+  const rate    = parseFloat(document.getElementById('tc-rate').value) || 0;
+  const notes   = document.getElementById('tc-notes').value.trim();
+  let clients = getClients();
+  if (tutorEditingId) {
+    const c = clients.find(c => c.id === tutorEditingId);
+    if (c) Object.assign(c, { name, subject, rate, notes });
+  } else {
+    clients.push({ id: Date.now(), name, subject, rate, notes, sessions: [], paid: false });
+  }
+  saveClients(clients); closeTutorModal(); renderTutoring();
+}
+
+function openTutorSessionModal(id) {
+  tutorSessionClientId = id;
+  document.getElementById('ts-date').value = today();
+  document.getElementById('ts-dur').value  = 60;
+  document.getElementById('tutor-session-modal').classList.add('open');
+}
+function closeTutorSessionModal() { document.getElementById('tutor-session-modal').classList.remove('open'); }
+
+function saveTutorSession() {
+  const date = document.getElementById('ts-date').value;
+  const duration = parseInt(document.getElementById('ts-dur').value) || 60;
+  const clients = getClients();
+  const c = clients.find(c => c.id === tutorSessionClientId);
+  if (c) { c.sessions.push({ date, duration }); saveClients(clients); }
+  closeTutorSessionModal(); renderTutoring();
+}
+
+function toggleTutorPaid(id) {
+  const clients = getClients();
+  const c = clients.find(c => c.id === id);
+  if (c) { c.paid = !c.paid; saveClients(clients); renderTutoring(); }
+}
+
+function deleteTutorClient(id) {
+  saveClients(getClients().filter(c => c.id !== id)); renderTutoring();
+}
+
+document.getElementById('tutor-client-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeTutorModal(); });
+document.getElementById('tutor-session-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeTutorSessionModal(); });
 // ── 14. INIT ──────────────────────────────────────────────────────────
 
 render();
