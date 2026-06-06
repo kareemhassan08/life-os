@@ -1428,7 +1428,7 @@ const getAppealState = () => JSON.parse(localStorage.getItem('appeal-state') || 
     'Mewing + Buteyko Breathing method'
     'MPR and Chin Tucks (5 x 10)',
     'UUDD',
-    'Sunscreen + Moisterizer,
+    'Sunscreen + Moisterizer',
     'Coconut Oil + Brush Teeth 2x'
   ],
   log: {}   // "YYYY-MM-DD" -> { checked: [indices of completed items] }
@@ -1471,8 +1471,8 @@ function renderAppeal() {
     return `<div class="appeal-day none" title="${d}: ${count}/${s.items.length}" style="position:relative;overflow:hidden;">
       <div style="position:absolute;bottom:0;left:0;right:0;height:${fillPct}%;background:${fillColor};transition:height .2s;"></div>
       <span style="position:relative;z-index:1;font-size:9px;color:${count > 0 ? '#fff' : 'var(--text3)'};">${count > 0 ? count : ''}</span>
-    </div>`;
-
+        </div>`;
+  }).join('');
   const pct = totalDays ? Math.round((totalDone / totalDays) * 100) : 0;
   document.getElementById('appeal-pct').textContent = totalDays ? `${pct}% avg` : '';
 }
