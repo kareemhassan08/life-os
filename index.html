@@ -202,6 +202,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .client-card { background: var(--bg2); border: .5px solid var(--border); border-radius: var(--rl); padding: 1rem 1.25rem; }
 .client-card.unpaid { border-left: 3px solid var(--am); }
 .client-card.paid   { border-left: 3px solid var(--g); }
+.ob-steps { display:flex; flex-direction:column; gap:4px; margin-bottom:8px; padding:8px 10px; background:var(--bg); border-radius:var(--r); }
+.ob-step  { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text2); }
+.ob-step.done { color:var(--text3); text-decoration:line-through; }
+.ob-step-dot { width:14px; height:14px; border-radius:50%; border:1.5px solid var(--border2); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:9px; }
+.ob-step-dot.done { background:var(--g); border-color:var(--g); color:#fff; }
+.ob-next { font-size:11px; font-weight:500; color:var(--am); margin-bottom:8px; display:flex; align-items:center; gap:4px; }
 .client-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .client-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: var(--text2); flex-shrink: 0; }
 .client-name { font-size: 14px; font-weight: 500; color: var(--text); margin: 0; }
@@ -686,12 +692,20 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
   <!-- TUTORING MODALS -->
   <div class="tutor-modal-bg" id="tutor-client-modal">
-    <div class="modal">
+    <div class="modal" style="max-width:380px;width:92%">
       <h3 id="tutor-modal-title">New client</h3>
       <div class="frow"><label>Name</label><input type="text" id="tc-name" class="ainp" placeholder="Student name" style="width:100%"/></div>
       <div class="frow"><label>Subject</label><input type="text" id="tc-subject" class="ainp" placeholder="e.g. Algebra II" style="width:100%"/></div>
       <div class="frow"><label>Hourly rate ($)</label><input type="number" id="tc-rate" class="ainp" placeholder="50" style="width:100%"/></div>
-      <div class="frow"><label>Notes</label><textarea id="tc-notes" class="ainp" placeholder="Goals, test dates, reminders…" style="width:100%;height:70px;resize:vertical"></textarea></div>
+      <div class="frow" style="margin-bottom:4px"><label>Onboarding steps</label></div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px" id="tc-onboarding-checks">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-intro" style="accent-color:var(--g)"/> Introductory session</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-diag" style="accent-color:var(--g)"/> Diagnostic practice test</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-math" style="accent-color:var(--g)"/> Math fundamentals evaluated</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-gram" style="accent-color:var(--g)"/> Grammar evaluated</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-prac" style="accent-color:var(--g)"/> Practice assigned & spot-checked</label>
+      </div>
+      <div class="frow"><label>Tutee notes</label><textarea id="tc-notes" class="ainp" placeholder="Strengths, weaknesses, test dates, personality, what works…" style="width:100%;height:80px;resize:vertical"></textarea></div>
       <div class="modal-btns">
         <button class="abtn" onclick="closeTutorModal()">Cancel</button>
         <button class="abtn primary" onclick="saveTutorClient()">Save</button>
@@ -1326,6 +1340,27 @@ function renderTutoring() {
         </div>
         <span class="cpaid-badge ${c.paid ? 'paid' : 'unpaid'}">${c.paid ? 'Paid' : 'Unpaid'}</span>
       </div>
+      ${(()=>{
+        const ob = c.onboarding || {};
+        const steps = [
+          { key:'intro', label:'Introductory session' },
+          { key:'diag',  label:'Diagnostic test' },
+          { key:'math',  label:'Math fundamentals' },
+          { key:'gram',  label:'Grammar eval' },
+          { key:'prac',  label:'Practice & spot-check' },
+        ];
+        const nextStep = steps.find(s => !ob[s.key]);
+        const stepsHTML = steps.map(s =>
+          `<div class="ob-step ${ob[s.key] ? 'done' : ''}">
+            <div class="ob-step-dot ${ob[s.key] ? 'done' : ''}">${ob[s.key] ? '✓' : ''}</div>
+            ${s.label}
+          </div>`
+        ).join('');
+        const nextHTML = nextStep
+          ? `<div class="ob-next">→ Next: ${nextStep.label}</div>`
+          : `<div class="ob-next" style="color:var(--g)">✓ Onboarding complete</div>`;
+        return `<div class="ob-steps">${stepsHTML}</div>${nextHTML}`;
+      })()}
       <div class="client-meta">
         <span>${lastSess ? 'Last: ' + fmt(lastSess) : 'No sessions'}</span>
         <span>Total owed: <strong style="color:var(--text)">$${owed.toFixed(0)}</strong></span>
@@ -1347,6 +1382,7 @@ function openTutorModal() {
   document.getElementById('tutor-modal-title').textContent = 'New client';
   ['tc-name','tc-subject','tc-notes'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('tc-rate').value = 50;
+  ['ob-intro','ob-diag','ob-math','ob-gram','ob-prac'].forEach(id => document.getElementById(id).checked = false);
   document.getElementById('tutor-client-modal').classList.add('open');
 }
 function openTutorEditModal(id) {
@@ -1357,6 +1393,12 @@ function openTutorEditModal(id) {
   document.getElementById('tc-subject').value = c.subject;
   document.getElementById('tc-rate').value    = c.rate;
   document.getElementById('tc-notes').value   = c.notes || '';
+  const ob = c.onboarding || {};
+  document.getElementById('ob-intro').checked = !!ob.intro;
+  document.getElementById('ob-diag').checked  = !!ob.diag;
+  document.getElementById('ob-math').checked  = !!ob.math;
+  document.getElementById('ob-gram').checked  = !!ob.gram;
+  document.getElementById('ob-prac').checked  = !!ob.prac;
   document.getElementById('tutor-client-modal').classList.add('open');
 }
 function closeTutorModal() { document.getElementById('tutor-client-modal').classList.remove('open'); }
@@ -1366,12 +1408,19 @@ function saveTutorClient() {
   const subject = document.getElementById('tc-subject').value.trim();
   const rate    = parseFloat(document.getElementById('tc-rate').value) || 0;
   const notes   = document.getElementById('tc-notes').value.trim();
+  const onboarding = {
+    intro: document.getElementById('ob-intro').checked,
+    diag:  document.getElementById('ob-diag').checked,
+    math:  document.getElementById('ob-math').checked,
+    gram:  document.getElementById('ob-gram').checked,
+    prac:  document.getElementById('ob-prac').checked,
+  };
   let clients = getClients();
   if (tutorEditingId) {
     const c = clients.find(c => c.id === tutorEditingId);
-    if (c) Object.assign(c, { name, subject, rate, notes });
+    if (c) Object.assign(c, { name, subject, rate, notes, onboarding });
   } else {
-    clients.push({ id: Date.now(), name, subject, rate, notes, sessions: [], paid: false });
+    clients.push({ id: Date.now(), name, subject, rate, notes, onboarding, sessions: [], paid: false });
   }
   saveClients(clients); closeTutorModal(); renderTutoring();
 }
