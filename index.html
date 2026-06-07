@@ -1452,7 +1452,7 @@ function saveTutorClient() {
   const subject = document.getElementById('tc-subject').value.trim();
   const rate    = parseFloat(document.getElementById('tc-rate').value) || 0;
   const notes   = document.getElementById('tc-notes').value.trim();
-  const satTotal = parseInt(document.getElementbyId('tc-sat-total').value) || null;
+  const satTotal = parseInt(document.getElementById('tc-sat-total').value) || null;
   const satMath = parseInt(document.getElementById('tc-sat-math').value) || null;
   const satRW   = parseInt(document.getElementById('tc-sat-rw').value)   || null;
   const onboarding = {
