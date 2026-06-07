@@ -700,27 +700,38 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
   <!-- TUTORING MODALS -->
   <div class="tutor-modal-bg" id="tutor-client-modal">
-    <div class="modal" style="max-width:380px;width:92%">
+    <div class="modal" style="max-width:520px;width:95%">
       <h3 id="tutor-modal-title">New client</h3>
       <div class="frow"><label>Name</label><input type="text" id="tc-name" class="ainp" placeholder="Student name" style="width:100%"/></div>
       <div class="frow"><label>Subject</label><input type="text" id="tc-subject" class="ainp" placeholder="e.g. Algebra II" style="width:100%"/></div>
       <div class="frow"><label>Hourly rate ($)</label><input type="number" id="tc-rate" class="ainp" placeholder="50" style="width:100%"/></div>
-     <div class="frow" style="margin-bottom:4px"><label>SAT scores (current)</label></div>
+  <div class="frow" style="margin-bottom:8px"><label>SAT scores (current)</label></div>
+      <div style="display:flex;justify-content:center;margin-bottom:8px">
+        <div style="text-align:center;min-width:120px">
+          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">Total (400–1600)</label>
+          <input type="number" id="tc-sat-total" class="ainp" placeholder="—" min="400" max="1600" step="10" style="width:120px;text-align:center;font-size:16px;font-weight:500;background:var(--bg2)" readonly/>
+        </div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
-        <div><label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">Math (200–800)</label><input type="number" id="tc-sat-math" class="ainp" placeholder="620" min="200" max="800" step="10" style="width:100%" oninput="updateSatTotal()"/></div>
-        <div><label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">R&W (200–800)</label><input type="number" id="tc-sat-rw" class="ainp" placeholder="580" min="200" max="800" step="10" style="width:100%" oninput="updateSatTotal()"/></div>
-        <div><label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">Total (400–1600)</label><input type="number" id="tc-sat-total" class="ainp" placeholder="—" min="400" max="1600" step="10" style="width:100%;background:var(--bg2)" readonly/></div>
+        <div><label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">Math (200–800)</label><input type="number" id="tc-sat-math" class="ainp" placeholder="e.g. 620" min="200" max="800" step="10" style="width:100%" oninput="updateSatTotal()"/></div>
+        <div><label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">R&W (200–800)</label><input type="number" id="tc-sat-rw" class="ainp" placeholder="e.g. 580" min="200" max="800" step="10" style="width:100%" oninput="updateSatTotal()"/></div>
       </div>
-         <div class="frow" style="margin-bottom:4px"><label>Onboarding steps</label></div>
-      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px" id="tc-onboarding-checks">
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-intro" style="accent-color:var(--g)"/> Introductory session</label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-diag" style="accent-color:var(--g)"/> Diagnostic practice test</label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-math" style="accent-color:var(--g)"/> Math fundamentals evaluated</label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-gram" style="accent-color:var(--g)"/> Grammar evaluated</label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-prac" style="accent-color:var(--g)"/> Practice assigned & spot-checked</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:6px">Onboarding steps</div>
+          <div style="display:flex;flex-direction:column;gap:6px" id="tc-onboarding-checks">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-intro" style="accent-color:var(--g)"/> Introductory session</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-diag" style="accent-color:var(--g)"/> Diagnostic practice test</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-math" style="accent-color:var(--g)"/> Math fundamentals evaluated</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-gram" style="accent-color:var(--g)"/> Grammar evaluated</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-prac" style="accent-color:var(--g)"/> Practice assigned & spot-checked</label>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:6px">Tutee notes</div>
+          <textarea id="tc-notes" class="ainp" placeholder="Strengths, weaknesses, test dates, personality, what works…" style="width:100%;flex:1;min-height:120px;resize:vertical;box-sizing:border-box"></textarea>
+        </div>
       </div>
-      <div class="frow"><label>Tutee notes</label><textarea id="tc-notes" class="ainp" placeholder="Strengths, weaknesses, test dates, personality, what works…" style="width:100%;height:80px;resize:vertical"></textarea></div>
       <div class="modal-btns">
         <button class="abtn" onclick="closeTutorModal()">Cancel</button>
         <button class="abtn primary" onclick="saveTutorClient()">Save</button>
