@@ -33,7 +33,23 @@
     --gl: #0a3d2e; --al: #3d2a08;
   }
 }
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBHSuq1FYzEl9u22VtXjKxR1znFg3foGJ8",
+  authDomain: "life-os-b938d.firebaseapp.com",
+  projectId: "life-os-b938d",
+  storageBucket: "life-os-b938d.firebasestorage.app",
+  messagingSenderId: "650278523710",
+  appId: "1:650278523710:web:3b862f4c8b2e5833f9126f"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 /* ── 2. RESET & BASE ──────────────────────────────────────────────── */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
@@ -922,9 +938,10 @@ function handleAuthClick() {
   if (currentUid) auth.signOut();
   else {
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).catch(err => alert('Sign-in failed: ' + err.message));
+    auth.signInWithRedirect(provider);
   }
 }
+auth.getRedirectResult().catch(err => { if (err && err.code) alert('Sign-in failed: ' + err.message); });
 
 auth.onAuthStateChanged(user => {
   const btn = document.getElementById('auth-btn');
