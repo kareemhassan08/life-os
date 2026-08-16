@@ -1,952 +1,693 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Life OS</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Life OS</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Firebase (compat build — works as plain <script> tags, no bundler needed) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <style>
+    :root {
+      --gap: 12px;
+      --color-bg: #ffffff;
+      --color-bg-secondary: #f5f5f4;
+      --color-text: #1a1a1a;
+      --color-text-secondary: #6b7280;
+      --color-text-tertiary: #9ca3af;
+      --color-border: rgba(0,0,0,0.12);
+      --color-border-secondary: rgba(0,0,0,0.2);
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --green: #1D9E75;
+      --green-light: #E1F5EE;
+      --green-dark: #0F6E56;
+      --amber: #BA7517;
+      --amber-light: #FAEEDA;
+      --red: #E24B4A;
+      --red-dark: #A32D2D;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-bg: #1c1c1e;
+        --color-bg-secondary: #2c2c2e;
+        --color-text: #f5f5f5;
+        --color-text-secondary: #a1a1aa;
+        --color-text-tertiary: #71717a;
+        --color-border: rgba(255,255,255,0.1);
+        --color-border-secondary: rgba(255,255,255,0.18);
+        --green-light: #0a3d2e;
+        --amber-light: #3d2a08;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--color-bg-secondary); color: var(--color-text); min-height: 100vh; }
+    .container { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem; }
+    .dashboard { }
+    .top-bar { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1.5rem; }
+    .top-bar h1 { font-size: 20px; font-weight: 600; color: var(--color-text); }
+    .top-bar .date { font-size: 13px; color: var(--color-text-secondary); }
+    .section-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-tertiary); margin-bottom: 8px; }
+    .metric-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--gap); margin-bottom: 1.5rem; }
+    .metric-card { background: var(--color-bg-secondary); border-radius: var(--radius-md); padding: 12px 14px; }
+    .metric-card .label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 4px; }
+    .metric-card .value { font-size: 22px; font-weight: 500; color: var(--color-text); line-height: 1; }
+    .metric-card .sub { font-size: 11px; color: var(--color-text-tertiary); margin-top: 3px; }
+    .metric-card.good .value { color: var(--green); }
+    .metric-card.warn .value { color: var(--amber); }
+    .metric-card.bad .value { color: var(--red-dark); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); margin-bottom: 1.5rem; }
+    @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+    .card { background: var(--color-bg); border: 0.5px solid var(--color-border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
+    .card-title { font-size: 13px; font-weight: 500; color: var(--color-text); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .habit-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 0.5px solid var(--color-border); }
+    .habit-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .habit-name { font-size: 13px; color: var(--color-text); }
+    .habit-streak { font-size: 12px; color: var(--color-text-secondary); }
+    .dot-row { display: flex; gap: 4px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--color-border); }
+    .dot.done { background: var(--green); }
+    .dot.miss { background: var(--red); }
+    .dot.today { background: var(--color-border-secondary); border: 1.5px solid var(--color-text-secondary); }
+    .log-btn { font-size: 11px; padding: 3px 10px; border-radius: var(--radius-md); border: 0.5px solid var(--color-border-secondary); background: transparent; color: var(--color-text-secondary); cursor: pointer; }
+    .log-btn:hover { background: var(--color-bg-secondary); }
+    .log-btn.logged { background: var(--color-bg-secondary); color: var(--green); border-color: var(--green); }
+    .lift-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--color-border); }
+    .lift-row:last-child { border-bottom: none; }
+    .lift-name { font-size: 13px; color: var(--color-text); }
+    .lift-right { display: flex; align-items: center; gap: 10px; }
+    .lift-val { font-size: 13px; font-weight: 500; color: var(--color-text); min-width: 60px; text-align: right; }
+    .lift-delta { font-size: 11px; }
+    .lift-delta.up { color: var(--green); }
+    .lift-delta.same { color: var(--color-text-tertiary); }
+    .bar-wrap { margin: 6px 0; }
+    .bar-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; }
+    .bar-track { height: 6px; background: var(--color-bg-secondary); border-radius: 3px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+    .bar-fill.green { background: var(--green); }
+    .bar-fill.amber { background: var(--amber); }
+    .bar-fill.red { background: var(--red); }
+    .goal-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--color-border); }
+    .goal-row:last-child { border-bottom: none; }
+    .goal-body { flex: 1; }
+    .goal-title { font-size: 13px; color: var(--color-text); margin-bottom: 3px; }
+    .goal-meta { font-size: 11px; color: var(--color-text-tertiary); }
+    .goal-status { font-size: 11px; padding: 2px 8px; border-radius: var(--radius-md); white-space: nowrap; cursor: pointer; }
+    .goal-status.active { background: var(--green-light); color: var(--green-dark); }
+    .goal-status.pending { background: var(--amber-light); color: #854F0B; }
+    .goal-status.done { background: #EAF3DE; color: #3B6D11; }
+    .screen-summary { display: flex; gap: var(--gap); margin-bottom: 10px; }
+    .screen-box { flex: 1; background: var(--color-bg-secondary); border-radius: var(--radius-md); padding: 10px 12px; text-align: center; }
+    .screen-box .sv { font-size: 20px; font-weight: 500; color: var(--color-text); }
+    .screen-box .sl { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; }
+    .sv.good { color: var(--green); }
+    .sv.bad { color: var(--red); }
+    .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .week-cell { aspect-ratio: 1; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; }
+    .week-cell.s0 { background: var(--color-bg-secondary); }
+    .week-cell.s1 { background: #9FE1CB; color: #085041; }
+    .week-cell.s2 { background: #5DCAA5; color: #04342C; }
+    .week-cell.s3 { background: #1D9E75; color: #04342C; }
+    .week-cell.s4 { background: #0F6E56; color: #E1F5EE; }
+    .week-cell.future { background: transparent; border: 0.5px solid var(--color-border); }
+    .add-row { margin-top: 10px; display: flex; gap: 6px; }
+    .add-input { flex: 1; font-size: 13px; padding: 6px 10px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--radius-md); background: var(--color-bg); color: var(--color-text); outline: none; }
+    .add-input:focus { border-color: var(--green); }
+    .add-btn { font-size: 13px; padding: 6px 12px; border-radius: var(--radius-md); border: 0.5px solid var(--color-border-secondary); background: transparent; color: var(--color-text); cursor: pointer; }
+    .add-btn:hover { background: var(--color-bg-secondary); }
+    .full-card { margin-bottom: 1.5rem; }
 
-<!-- =====================================================================
-     STYLES — all visual rules live here, organised into labelled sections
-===================================================================== -->
-<style>
+    /* Google Calendar styles */
+    .gcal-connect-wrap { display: flex; flex-direction: column; align-items: center; padding: 1.5rem; gap: 10px; }
+    .gcal-connect-btn { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 8px 16px; border-radius: var(--radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-bg); color: var(--color-text); cursor: pointer; font-family: inherit; }
+    .gcal-connect-btn:hover { background: var(--color-bg-secondary); }
+    .gcal-hint { font-size: 11px; color: var(--color-text-tertiary); }
+    .gcal-user { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .gcal-user img { width: 20px; height: 20px; border-radius: 50%; }
+    .gcal-user span { font-size: 12px; color: var(--color-text-secondary); }
+    .gcal-signout { font-size: 11px; color: var(--color-text-tertiary); cursor: pointer; margin-left: auto; }
+    .gcal-signout:hover { color: var(--color-text); }
+    .gcal-loading { font-size: 13px; color: var(--color-text-tertiary); padding: 1rem 0; text-align: center; }
+    .gcal-error { font-size: 12px; color: var(--red-dark); padding: 8px 0; }
+    .event-row { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 0.5px solid var(--color-border); }
+    .event-row:last-child { border-bottom: none; }
+    .event-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+    .event-body { flex: 1; min-width: 0; }
+    .event-title { font-size: 13px; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .event-time { font-size: 11px; color: var(--color-text-tertiary); margin-top: 2px; }
+    .event-day-label { font-size: 11px; font-weight: 500; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 0 4px; }
 
-/* ── 1. DESIGN TOKENS ─────────────────────────────────────────────── */
-:root {
-  --gap: 12px;
-  --g: #1D9E75;  --gl: #E1F5EE;  --gd: #0F6E56;
-  --am: #BA7517; --al: #FAEEDA;
-  --rd: #E24B4A;
-  --bg: #f5f5f4; --bg2: #ffffff;
-  --text: #1a1a1a; --text2: #6b7280; --text3: #9ca3af;
-  --border: rgba(0,0,0,0.10); --border2: rgba(0,0,0,0.18);
-  --r: 8px; --rl: 12px;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1c1c1e;  --bg2: #2c2c2e;
-    --text: #f5f5f5; --text2: #a1a1aa; --text3: #71717a;
-    --border: rgba(255,255,255,0.09); --border2: rgba(255,255,255,0.16);
-    --gl: #0a3d2e; --al: #3d2a08;
-  }
-}
+    /* Sync indicator */
+    .sync-badge { font-size: 11px; color: var(--color-text-tertiary); display: flex; align-items: center; gap: 4px; }
+    .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-text-tertiary); }
+    .sync-dot.on { background: var(--green); }
+    .sync-dot.syncing { background: var(--amber); }
 
-/* ── 2. RESET & BASE ──────────────────────────────────────────────── */
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-.wrap { max-width: 920px; margin: 0 auto; padding: 1.5rem 1rem; }
-
-/* ── 3. TOP BAR & TABS ────────────────────────────────────────────── */
-.topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
-.topbar h1 { font-size: 18px; font-weight: 600; }
-.topbar .dt { font-size: 12px; color: var(--text2); }
-.tabs { display: flex; gap: 2px; background: var(--bg); border: .5px solid var(--border); border-radius: var(--rl); padding: 3px; margin-bottom: 1.5rem; }
-.tab { flex: 1; text-align: center; font-size: 12px; padding: 7px 4px; border-radius: 10px; cursor: pointer; color: var(--text2); transition: all .15s; border: none; background: transparent; font-family: inherit; }
-.tab:hover { color: var(--text); }
-.tab.active { background: var(--bg2); color: var(--text); border: .5px solid var(--border2); font-weight: 500; }
-.pane { display: none; } .pane.active { display: block; }
-
-/* ── 4. LAYOUT ────────────────────────────────────────────────────── */
-.slbl { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--text3); margin-bottom: 8px; }
-.mrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px,1fr)); gap: var(--gap); margin-bottom: 1.5rem; }
-.twocol { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); margin-bottom: 1.5rem; }
-@media (max-width: 560px) { .twocol { grid-template-columns: 1fr; } }
-.card { background: var(--bg2); border: .5px solid var(--border); border-radius: var(--rl); padding: 1rem 1.25rem; }
-.ctitle { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 11px; display: flex; align-items: center; gap: 6px; }
-
-/* ── 5. METRIC CARDS ──────────────────────────────────────────────── */
-.mc { background: var(--bg); border-radius: var(--r); padding: 11px 13px; }
-.mc .lbl { font-size: 11px; color: var(--text2); margin-bottom: 3px; }
-.mc .val { font-size: 21px; font-weight: 500; color: var(--text); line-height: 1; }
-.mc .sub { font-size: 10px; color: var(--text3); margin-top: 2px; }
-.mc.good .val { color: var(--g); } .mc.warn .val { color: var(--am); } .mc.bad .val { color: var(--rd); }
-
-/* ── 6. HABITS ────────────────────────────────────────────────────── */
-.hrow { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: .5px solid var(--border); }
-.hrow:last-child { border-bottom: none; padding-bottom: 0; }
-.hname { font-size: 13px; color: var(--text); }
-.hstrk { font-size: 11px; color: var(--text2); }
-.drow { display: flex; gap: 3px; }
-.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border2); }
-.dot.done { background: var(--g); } .dot.miss { background: var(--rd); } .dot.today { background: transparent; border: 1.5px solid var(--text2); }
-.hrow-actions { display: flex; align-items: center; gap: 6px; }
-.logbtn { font-size: 11px; padding: 3px 9px; border-radius: var(--r); border: .5px solid var(--border2); background: transparent; color: var(--text2); cursor: pointer; font-family: inherit; }
-.logbtn:hover { background: var(--bg); } .logbtn.logged { color: var(--g); border-color: var(--g); }
-
-/* ── 7. GOALS ─────────────────────────────────────────────────────── */
-.grow { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: .5px solid var(--border); }
-.grow:last-child { border-bottom: none; }
-.gbody { flex: 1; min-width: 0; }
-.gtitle { font-size: 13px; color: var(--text); margin-bottom: 2px; }
-.gmeta  { font-size: 11px; color: var(--text3); }
-.grow-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-.gstat { font-size: 11px; padding: 2px 8px; border-radius: var(--r); white-space: nowrap; cursor: pointer; border: none; font-family: inherit; }
-.gstat.active  { background: var(--gl); color: var(--gd); }
-.gstat.pending { background: var(--al); color: #854F0B; }
-.gstat.done    { background: #EAF3DE; color: #3B6D11; }
-
-/* ── 8. INPUTS & BUTTONS ──────────────────────────────────────────── */
-.adrow { display: flex; gap: 6px; margin-top: 9px; }
-.ainp { font-size: 12px; padding: 6px 9px; border: .5px solid var(--border2); border-radius: var(--r); background: var(--bg2); color: var(--text); flex: 1; font-family: inherit; outline: none; }
-.ainp:focus { border-color: var(--g); }
-.abtn { font-size: 12px; padding: 6px 11px; border-radius: var(--r); border: .5px solid var(--border2); background: transparent; color: var(--text); cursor: pointer; font-family: inherit; white-space: nowrap; }
-.abtn:hover { background: var(--bg); }
-.abtn.primary { background: var(--g); color: #fff; border-color: var(--g); }
-.abtn.primary:hover { background: var(--gd); }
-.delbtn { font-size: 11px; color: var(--rd); cursor: pointer; background: none; border: none; font-family: inherit; padding: 0; opacity: .55; line-height: 1; }
-.delbtn:hover { opacity: 1; }
-
-/* ── 9. SCREEN TIME BARS ──────────────────────────────────────────── */
-.sbox { display: flex; gap: var(--gap); margin-bottom: 10px; }
-.sb { flex: 1; background: var(--bg); border-radius: var(--r); padding: 9px 11px; text-align: center; }
-.sv { font-size: 19px; font-weight: 500; color: var(--text); }
-.sv.good { color: var(--g); } .sv.bad { color: var(--rd); }
-.sl { font-size: 10px; color: var(--text2); margin-top: 2px; }
-.bwrap { margin: 5px 0; }
-.blbl { display: flex; justify-content: space-between; font-size: 10px; color: var(--text2); margin-bottom: 2px; }
-.btrack { height: 5px; background: var(--bg); border-radius: 3px; overflow: hidden; }
-.bfill { height: 100%; border-radius: 3px; transition: width .4s; }
-.bfill.green { background: var(--g); } .bfill.amber { background: var(--am); } .bfill.red { background: var(--rd); }
-
-/* ── 10. HEATMAP ──────────────────────────────────────────────────── */
-.hgrid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
-.hcell { aspect-ratio: 1; border-radius: 3px; cursor: pointer; transition: opacity .1s; }
-.hcell:hover { opacity: .75; }
-.hcell.s0 { background: var(--bg); } .hcell.s1 { background: #9FE1CB; } .hcell.s2 { background: #5DCAA5; }
-.hcell.s3 { background: var(--g); } .hcell.s4 { background: var(--gd); }
-.hcell.future { background: transparent; border: .5px solid var(--border); }
-
-/* ── 11. FITNESS TAB ──────────────────────────────────────────────── */
-
-/*
-  fit-grid: two columns — muscle map card on left, logger on right.
-  340px is a fixed width for the map; 1fr means "take the rest".
-  align-items:start stops the cards from stretching to equal height.
-*/
-.fit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); align-items: start; margin-bottom: 1.25rem; }
-@media (max-width: 760px) { .fit-grid { grid-template-columns: 1fr; } }
-
-/*
-  muscle-wrap: three SVG views side by side (front, side, back).
-  justify-content:center keeps them centred inside the card.
-  gap:12px adds breathing room between them.
-*/
-.muscle-wrap { display: flex; gap: 12px; justify-content: center; align-items: flex-start; width: 100%; }
-.muscle-svg  { flex: 1; width: 100%; height: auto; min-height: 280px; display: block; }
-
-.mslbl { font-size: 10px; color: var(--text3); text-align: center; margin-bottom: 4px; }
-.muscle-info { margin-top: 10px; padding: 9px 11px; background: var(--bg); border-radius: var(--r); min-height: 60px; }
-.muscle-info .mi-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
-.muscle-info .mi-hint { font-size: 11px; color: var(--text3); font-style: italic; }
-
-/* Intensity legend row */
-.intensity-legend { display: flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 10px; color: var(--text3); flex-wrap: wrap; }
-.ileg-swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
-
-/*
-  mpart: every clickable muscle shape in the SVG gets this class.
-  transition: fill means colour changes animate smoothly over 0.2s.
-  The fill on each shape is set in HTML as a default (the grey resting state).
-  JS overrides it via el.style.fill = "..." for intensity colouring.
-*/
-.mpart { cursor: pointer; transition: fill .2s, opacity .15s; }
-.mpart:hover { opacity: .75; }
-
-/*
-  highlight / dim are toggled by selectMuscle().
-  !important on highlight overrides any inline style.fill set by intensity colouring.
-  dim drops opacity so unrelated muscles fade back.
-*/
-.mpart.highlight { fill: #1D9E75 !important; opacity: 1; }
-.mpart.dim { opacity: .18; }
-.set-row { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
-.set-lbl { font-size: 11px; color: var(--text2); min-width: 38px; }
-.sess-item { padding: 9px 0; border-bottom: .5px solid var(--border); }
-.sess-item:last-child { border-bottom: none; }
-.sess-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
-.sess-title  { font-size: 13px; font-weight: 500; color: var(--text); }
-.sess-date   { font-size: 11px; color: var(--text3); }
-.sess-detail { font-size: 11px; color: var(--text2); line-height: 1.7; }
-
-/* ── 12. NUTRITION TAB ────────────────────────────────────────────── */
-.macro-row { display: grid; grid-template-columns: repeat(4,1fr); gap: var(--gap); margin-bottom: 1.25rem; }
-@media (max-width: 480px) { .macro-row { grid-template-columns: repeat(2,1fr); } }
-.macro-card { background: var(--bg); border-radius: var(--r); padding: 11px 13px; text-align: center; }
-.macro-card .mv { font-size: 22px; font-weight: 500; color: var(--text); line-height: 1; }
-.macro-card .ml { font-size: 10px; color: var(--text2); margin-top: 2px; }
-.macro-card .mt { font-size: 10px; color: var(--text3); }
-.macro-card .mbar { height: 3px; border-radius: 2px; margin-top: 6px; background: var(--border2); }
-.macro-card .mbar-fill { height: 100%; border-radius: 2px; transition: width .4s; }
-.meal-row { display: flex; align-items: flex-start; justify-content: space-between; padding: 7px 0; border-bottom: .5px solid var(--border); }
-.meal-row:last-child { border-bottom: none; }
-.meal-name   { font-size: 13px; color: var(--text); margin-bottom: 2px; }
-.meal-macros { font-size: 11px; color: var(--text2); }
-.meal-cals   { font-size: 13px; font-weight: 500; color: var(--text); }
-
-/* ── 13. MODAL ────────────────────────────────────────────────────── */
-.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; align-items: center; justify-content: center; }
-.modal-bg.open { display: flex; }
-.modal { background: var(--bg2); border-radius: var(--rl); padding: 1.25rem; width: min(380px, 92vw); border: .5px solid var(--border2); }
-.modal h3 { font-size: 14px; font-weight: 500; margin-bottom: 1rem; color: var(--text); }
-.frow { margin-bottom: 10px; }
-.frow label { font-size: 11px; color: var(--text2); display: block; margin-bottom: 3px; }
-.modal-btns { display: flex; gap: 8px; margin-top: 1rem; justify-content: flex-end; }
-
-/* ── 14. MISC ─────────────────────────────────────────────────────── */
-.badge { font-size: 10px; padding: 2px 7px; border-radius: 20px; background: var(--bg); color: var(--text2); border: .5px solid var(--border); }
-.empty-state { font-size: 12px; color: var(--text3); padding: 8px 0; }
-
-/* ── 15. TUTORING TAB ─────────────────────────────────────────────── */
-.tutor-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px,1fr)); gap: var(--gap); margin-bottom: 1.5rem; }
-.tutor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px,1fr)); gap: var(--gap); margin-bottom: 1.5rem; }
-.client-card { background: var(--bg2); border: .5px solid var(--border); border-radius: var(--rl); padding: 1rem 1.25rem; }
-.client-card.unpaid { border-left: 3px solid var(--am); }
-.client-card.paid   { border-left: 3px solid var(--g); }
-.ob-steps { display:flex; flex-direction:column; gap:4px; margin-bottom:8px; padding:8px 10px; background:var(--bg); border-radius:var(--r); }
-.ob-step  { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text2); }
-.ob-step.done { color:var(--text3); text-decoration:line-through; }
-.ob-step-dot { width:14px; height:14px; border-radius:50%; border:1.5px solid var(--border2); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:9px; }
-.ob-step-dot.done { background:var(--g); border-color:var(--g); color:#fff; }
-.ob-next { font-size:11px; font-weight:500; color:var(--am); margin-bottom:8px; display:flex; align-items:center; gap:4px; }
-.sat-scores { display:flex; gap:8px; margin-bottom:8px; }
-.sat-score-box { flex:1; background:var(--bg); border-radius:var(--r); padding:6px 10px; }
-.sat-score-label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:.04em; margin:0 0 2px; }
-.sat-score-val { font-size:18px; font-weight:500; color:var(--text); margin:0; }
-.sat-score-val.low { color:#E05555; }
-.sat-score-val.mid { color:var(--am); }
-.sat-score-val.high { color:var(--g); }
-.sat-total { font-size:11px; color:var(--text2); margin-bottom:8px; }
-.client-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.client-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: var(--text2); flex-shrink: 0; }
-.client-name { font-size: 14px; font-weight: 500; color: var(--text); margin: 0; }
-.client-sub  { font-size: 11px; color: var(--text2); margin: 0; }
-.client-meta { font-size: 12px; color: var(--text2); margin-bottom: 6px; display: flex; flex-direction: column; gap: 3px; }
-.client-note { font-size: 11px; color: var(--text2); background: var(--bg); border-radius: var(--r); padding: 5px 8px; margin-bottom: 8px; line-height: 1.5; font-style: italic; }
-.client-sessions { font-size: 11px; color: var(--text3); border-top: .5px solid var(--border); padding-top: 6px; margin-bottom: 8px; }
-.client-session-row { display: flex; justify-content: space-between; padding: 2px 0; }
-.client-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-.cpaid-badge { font-size: 10px; padding: 2px 7px; border-radius: 20px; margin-left: auto; font-weight: 500; }
-.cpaid-badge.paid   { background: var(--gl); color: var(--gd); }
-.cpaid-badge.unpaid { background: var(--al); color: #854F0B; }
-.tutor-modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; align-items: center; justify-content: center; }
-.tutor-modal-bg.open { display: flex; }
-
-     /* ── 16. NOTES CARDS ──────────────────────────────────────────────── */
-.notes-textarea { width:100%; min-height:90px; resize:vertical; font-size:12px; line-height:1.6; font-family:inherit; background:var(--bg); color:var(--text); border:.5px solid var(--border2); border-radius:var(--r); padding:8px 10px; outline:none; }
-.notes-textarea:focus { border-color:var(--g); }
-.notes-saved-hint { font-size:10px; color:var(--text3); margin-top:4px; min-height:14px; }
-
-/* ── 17. APPEAL TAB ───────────────────────────────────────────────── */
-.appeal-checks { display: flex; flex-direction: column; gap: 0; }
-.appeal-check-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: .5px solid var(--border); }
-.appeal-check-row:last-child { border-bottom: none; }
-.appeal-check-row input[type="checkbox"] { width:16px; height:16px; accent-color: var(--g); cursor:pointer; flex-shrink:0; }
-.appeal-check-label { font-size: 13px; color: var(--text); flex: 1; }
-.appeal-streak-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
-.appeal-day { aspect-ratio:1; border-radius:4px; display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text3); }
-.appeal-day.full  { background: var(--g);  color:#fff; }
-.appeal-day.partial { background: var(--am); color:#fff; }
-.appeal-day.none  { background: var(--bg); }
-.appeal-day.future { background: transparent; border:.5px solid var(--border); }
-     
-</style>
+    /* TABS */
+    .tabs { display:flex; gap:2px; margin-bottom:1.5rem; border-bottom:1px solid var(--color-border); }
+    .tab { font-size:13px; padding:8px 16px; cursor:pointer; color:var(--color-text-secondary); border:none; background:none; border-bottom:2px solid transparent; margin-bottom:-1px; font-family:inherit; }
+    .tab:hover { color:var(--color-text); }
+    .tab.active { color:var(--color-text); font-weight:500; border-bottom-color:var(--color-text); }
+    .pane { display:none; }
+    .pane.active { display:block; }
+  </style>
 </head>
 <body>
-<div class="wrap">
-
-  <div class="topbar">
+<div class="container">
+<div class="dashboard">
+  <div class="top-bar">
+    <div class="tabs">
+  <button class="tab active" onclick="showTab('home')">Home</button>
+  <button class="tab" onclick="showTab('fitness')">Fitness</button>
+</div>
     <h1>Life OS</h1>
-    <span class="dt" id="today-date"></span>
-  </div>
-
-  <div class="tabs">
-    <button class="tab active" onclick="showTab('home')">Home</button>
-    <button class="tab" onclick="showTab('fitness')">Fitness</button>
-    <button class="tab" onclick="showTab('nutrition')">Nutrition</button>
-    <button class="tab" onclick="showTab('tutoring')">Tutoring</button>
-    <button class="tab" onclick="showTab('appeal')">Appeal</button>
-  </div>
-
-  <!-- HOME -->
-  <div class="pane active" id="pane-home">
-    <div class="slbl">Overview</div>
-    <div class="mrow">
-      <div class="mc good"><div class="lbl">Best habit streak</div><div class="val" id="streak-val">0</div><div class="sub">days running</div></div>
-      <div class="mc" id="workout-card"><div class="lbl">Workouts this week</div><div class="val" id="workout-val">0</div><div class="sub">target: 4</div></div>
-      <div class="mc" id="screen-card"><div class="lbl">Screen time today</div><div class="val" id="screen-val">—</div><div class="sub">self-reported hrs</div></div>
-      <div class="mc"><div class="lbl">Goals active</div><div class="val" id="goals-active-val">—</div><div class="sub">in progress</div></div>
-    </div>
-
-    <div class="twocol">
-      <div class="card">
-        <div class="ctitle">✓ Daily habits</div>
-        <div id="habit-list"></div>
-        <div class="adrow">
-          <input class="ainp" id="new-habit-input" placeholder="Add habit…" onkeydown="if(event.key==='Enter')addHabit()"/>
-          <button class="abtn" onclick="addHabit()">+</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="ctitle">🎯 Goals</div>
-        <div id="goals-list"></div>
-        <div class="adrow" style="flex-wrap:wrap">
-          <input class="ainp" id="new-goal-input" placeholder="Add goal…" style="flex:3;min-width:120px" onkeydown="if(event.key==='Enter')addGoal()"/>
-          <select class="ainp" id="new-goal-cat" style="flex:1;min-width:90px">
-            <option value="academic">Academic</option>
-            <option value="fitness">Fitness</option>
-            <option value="professional">Professional</option>
-            <option value="personal">Personal</option>
-          </select>
-          <button class="abtn" onclick="addGoal()">+</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="twocol">
-      <div class="card">
-        <div class="ctitle">📵 Screen time</div>
-        <div class="sbox">
-          <div class="sb"><div class="sv" id="sc-today">—</div><div class="sl">total today</div></div>
-          <div class="sb"><div class="sv" id="sc-yt">—</div><div class="sl">YouTube</div></div>
-          <div class="sb"><div class="sv" id="sc-avg">—</div><div class="sl">7-day avg</div></div>
-        </div>
-        <div id="sc-week-bars"></div>
-        <div class="adrow" style="margin-top:10px">
-          <input class="ainp" id="sc-input" type="number" min="0" max="16" step="0.5" placeholder="Total hrs today" onkeydown="if(event.key==='Enter')logScreen()"/>
-          <button class="abtn" onclick="logScreen()">Log total</button>
-        </div>
-        <div class="adrow">
-          <input class="ainp" id="sc-yt-input" type="number" min="0" max="16" step="0.5" placeholder="YouTube hrs today" onkeydown="if(event.key==='Enter')logYouTube()"/>
-          <button class="abtn" style="color:var(--rd);border-color:var(--rd)" onclick="logYouTube()">Log YT</button>
-        </div>
-        <p style="font-size:10px;color:var(--text3);margin-top:8px;line-height:1.5">
-          For auto YouTube tracking, see the note on the Fitness tab.
-        </p>
-      </div>
-      <div class="card">
-        <div class="ctitle">📅 Workout heatmap</div>
-        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text3);margin-bottom:5px">
-          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
-        </div>
-        <div class="hgrid" id="heatmap-grid"></div>
-        <div style="margin-top:9px;display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)">
-          <span>less</span>
-          <div style="width:9px;height:9px;border-radius:2px;background:var(--bg)"></div>
-          <div style="width:9px;height:9px;border-radius:2px;background:#9FE1CB"></div>
-          <div style="width:9px;height:9px;border-radius:2px;background:var(--g)"></div>
-          <div style="width:9px;height:9px;border-radius:2px;background:var(--gd)"></div>
-          <span>more</span>
-          <span style="margin-left:auto;cursor:pointer;color:var(--text2)" onclick="showTab('fitness')">+ log workout →</span>
-        </div>
-      </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="sync-badge"><span class="sync-dot" id="sync-dot"></span><span id="sync-label">local only</span></span>
+      <span class="date" id="today-date"></span>
     </div>
   </div>
 
-  <!-- FITNESS -->
-  <div class="pane" id="pane-fitness">
-    <div class="fit-grid">
-      <!-- Muscle map -->
-      <div class="card" style="margin-bottom:0">
-        <div class="ctitle">💪 Muscle map <span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:auto">tap a muscle</span></div>
+  <div class="section-label">Overview</div>
+    <!-- HOME PANE — wrap your existing content -->
+<div class="pane active" id="pane-home">
+  <div class="metric-row">
+    <div class="metric-card good">
+      <div class="label">Habit streak</div>
+      <div class="value" id="streak-val">0</div>
+      <div class="sub">days running</div>
+    </div>
+    <div class="metric-card" id="workout-card">
+      <div class="label">Workouts this week</div>
+      <div class="value" id="workout-val">0</div>
+      <div class="sub">target: 4</div>
+    </div>
+    <div class="metric-card" id="screen-card">
+      <div class="label">Screen time today</div>
+      <div class="value" id="screen-val">—</div>
+      <div class="sub">self-reported hrs</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Goals active</div>
+      <div class="value" id="goals-active-val">—</div>
+      <div class="sub">in progress</div>
+    </div>
+  </div>
 
-        <!--
-          Three SVG views. Each is a separate <svg> element sharing the same
-          120×280 coordinate space. The viewBox="0 0 120 280" means:
-            - Start at coordinate (0,0) top-left
-            - The canvas is 120 units wide, 280 units tall
-          These units are NOT pixels — they're just a consistent grid.
-          The browser stretches the grid to fit max-width:110px per view.
-          So cx="60" is always the horizontal centre regardless of rendered size.
-        -->
-        <div class="muscle-wrap">
-
-          <!-- ── FRONT VIEW ── -->
-          <div>
-            <div class="mslbl">Front</div>
-            <svg class="muscle-svg" viewBox="0 0 120 280" xmlns="http://www.w3.org/2000/svg">
-              <!-- Non-interactive anatomy: head, neck, pelvis, hands, feet -->
-              <!-- These just have inline fill="#c8c8c8" — no class, no JS touches them -->
-              <ellipse cx="60" cy="22" rx="16" ry="18" fill="#c8c8c8" opacity=".35"/>
-              <rect x="54" y="38" width="12" height="12" rx="3" fill="#c8c8c8" opacity=".35"/>
-              <ellipse cx="22" cy="138" rx="6" ry="7" fill="#c8c8c8" opacity=".3"/>
-              <ellipse cx="98" cy="138" rx="6" ry="7" fill="#c8c8c8" opacity=".3"/>
-              <ellipse cx="48" cy="258" rx="10" ry="6" fill="#c8c8c8" opacity=".3"/>
-              <ellipse cx="72" cy="258" rx="10" ry="6" fill="#c8c8c8" opacity=".3"/>
-              <rect x="47" y="118" width="26" height="14" rx="4" fill="#c8c8c8" opacity=".3"/>
-
-              <!-- Interactive muscles — each wrapped in <g class="mpart" id="..." onclick="...">
-                   The <g> is a "group" element. It has no visual output itself but inherits
-                   class/events and passes them to children. We group so one click handler
-                   covers multi-shape muscles (e.g. abs has rect + 3 lines).
-                   The fill on the inner shape is the DEFAULT (resting) colour.
-                   JS will override it with intensity colour via el.querySelector('[fill]').setAttribute('fill',...)
-              -->
-
-              <!-- CHEST: two ellipses, one per pec -->
-              <g class="mpart" id="m-chest-l" onclick="selectMuscle('chest')"><ellipse cx="48" cy="64" rx="14" ry="12" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-chest-r" onclick="selectMuscle('chest')"><ellipse cx="72" cy="64" rx="14" ry="12" fill="#a0aec0"/></g>
-
-              <!-- FRONT DELTS: sit on the shoulder corners -->
-              <g class="mpart" id="m-fdelt-l" onclick="selectMuscle('shoulders')"><ellipse cx="32" cy="57" rx="10" ry="11" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-fdelt-r" onclick="selectMuscle('shoulders')"><ellipse cx="88" cy="57" rx="10" ry="11" fill="#a0aec0"/></g>
-
-              <!-- ABS: rect for the rectus, lines for the tendinous intersections (the "six-pack" divisions) -->
-              <g class="mpart" id="m-abs" onclick="selectMuscle('abs')">
-                <rect x="49" y="79" width="22" height="36" rx="5" fill="#a0aec0"/>
-                <line x1="49" y1="90" x2="71" y2="90" stroke="white" stroke-width="1.2" opacity=".45"/>
-                <line x1="49" y1="102" x2="71" y2="102" stroke="white" stroke-width="1.2" opacity=".45"/>
-                <line x1="60" y1="79" x2="60" y2="115" stroke="white" stroke-width="1.2" opacity=".45"/>
-              </g>
-
-              <!-- OBLIQUES: flanking the abs -->
-              <g class="mpart" id="m-obl-l" onclick="selectMuscle('abs')"><ellipse cx="43" cy="93" rx="7" ry="15" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-obl-r" onclick="selectMuscle('abs')"><ellipse cx="77" cy="93" rx="7" ry="15" fill="#a0aec0"/></g>
-
-              <!-- BICEPS: upper arm, front -->
-              <g class="mpart" id="m-bic-l" onclick="selectMuscle('biceps')"><ellipse cx="28" cy="85" rx="7" ry="17" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-bic-r" onclick="selectMuscle('biceps')"><ellipse cx="92" cy="85" rx="7" ry="17" fill="#a0aec0"/></g>
-
-              <!-- FOREARMS front -->
-              <g class="mpart" id="m-fore-fl" onclick="selectMuscle('forearms')"><ellipse cx="24" cy="119" rx="6" ry="15" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-fore-fr" onclick="selectMuscle('forearms')"><ellipse cx="96" cy="119" rx="6" ry="15" fill="#a0aec0"/></g>
-
-              <!-- QUADS: big ellipses, upper leg front. ry=32 makes them tall. -->
-              <g class="mpart" id="m-quad-l" onclick="selectMuscle('quads')"><ellipse cx="48" cy="173" rx="14" ry="32" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-quad-r" onclick="selectMuscle('quads')"><ellipse cx="72" cy="173" rx="14" ry="32" fill="#a0aec0"/></g>
-
-              <!-- CALVES front (tibialis anterior) -->
-              <g class="mpart" id="m-calf-fl" onclick="selectMuscle('calves')"><ellipse cx="48" cy="233" rx="9" ry="21" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-calf-fr" onclick="selectMuscle('calves')"><ellipse cx="72" cy="233" rx="9" ry="21" fill="#a0aec0"/></g>
+  <div class="two-col">
+    <div class="card full-card" style="margin-bottom:0">
+      <div class="card-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Google Calendar
+        <span id="gcal-status-badge" style="margin-left:auto;font-size:11px;color:var(--color-text-tertiary)"></span>
+      </div>
+      <div id="gcal-content">
+        <div class="gcal-connect-wrap">
+          <button class="gcal-connect-btn" onclick="signInWithGoogle()">
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
             </svg>
-          </div>
-
-          <!-- ── SIDE VIEW ──
-               The lateral view uses a silhouette coordinate space.
-               cx values are compressed toward the centre (range ~45–80) to simulate
-               a profile. The key feature here is the lat sweep: a wide ellipse
-               starting near the shoulder and tapering at the waist.
-               The spine is shown as a faint rect for spatial reference.
-          -->
-          <div>
-            <div class="mslbl">Side</div>
-            <svg class="muscle-svg" viewBox="0 0 120 280" xmlns="http://www.w3.org/2000/svg">
-              <!-- Non-interactive: head, neck, spine reference, pelvis, foot -->
-              <ellipse cx="58" cy="22" rx="14" ry="18" fill="#c8c8c8" opacity=".35"/>
-              <rect x="54" y="38" width="10" height="12" rx="3" fill="#c8c8c8" opacity=".3"/>
-              <!-- spine reference line -->
-              <line x1="60" y1="50" x2="60" y2="140" stroke="#c8c8c8" stroke-width="3" opacity=".2" stroke-linecap="round"/>
-              <ellipse cx="56" cy="258" rx="12" ry="6" fill="#c8c8c8" opacity=".3"/>
-              <rect x="50" y="125" width="18" height="12" rx="3" fill="#c8c8c8" opacity=".25"/>
-
-              <!-- SHOULDER (side delt) — lateral deltoid is most visible from the side -->
-              <g class="mpart" id="m-sdelt" onclick="selectMuscle('shoulders')">
-                <ellipse cx="44" cy="57" rx="11" ry="12" fill="#a0aec0"/>
-              </g>
-
-              <!-- CHEST (pec, side profile) — visible as a forward bulge -->
-              <g class="mpart" id="m-chest-s" onclick="selectMuscle('chest')">
-                <ellipse cx="47" cy="68" rx="10" ry="10" fill="#a0aec0"/>
-              </g>
-
-              <!-- TRICEP — dominant on the back of the upper arm from the side -->
-              <g class="mpart" id="m-tri-s" onclick="selectMuscle('triceps')">
-                <ellipse cx="70" cy="83" rx="8" ry="18" fill="#a0aec0"/>
-              </g>
-
-              <!-- BICEP — front of upper arm -->
-              <g class="mpart" id="m-bic-s" onclick="selectMuscle('biceps')">
-                <ellipse cx="48" cy="83" rx="7" ry="17" fill="#a0aec0"/>
-              </g>
-
-              <!-- LAT — the defining feature from the side: wide fan from armpit to waist.
-                   We use a polygon with 4 points to capture the sweep shape:
-                   top-back shoulder → narrow waist → hip → back out to armpit area.
-                   points="x1,y1 x2,y2 x3,y3 x4,y4" — clockwise from top-left.
-              -->
-              <g class="mpart" id="m-lat-s" onclick="selectMuscle('lats')">
-                <polygon points="68,58 80,62 74,110 62,105" fill="#a0aec0"/>
-              </g>
-
-              <!-- LOWER BACK / ERECTOR — the rear column -->
-              <g class="mpart" id="m-lb-s" onclick="selectMuscle('lowerback')">
-                <ellipse cx="70" cy="103" rx="7" ry="15" fill="#a0aec0"/>
-              </g>
-
-              <!-- ABS side — a narrower strip front-centre -->
-              <g class="mpart" id="m-abs-s" onclick="selectMuscle('abs')">
-                <ellipse cx="46" cy="95" rx="6" ry="18" fill="#a0aec0"/>
-              </g>
-
-              <!-- GLUTE — rear lower torso -->
-              <g class="mpart" id="m-glute-s" onclick="selectMuscle('glutes')">
-                <ellipse cx="70" cy="133" rx="13" ry="14" fill="#a0aec0"/>
-              </g>
-
-              <!-- QUAD (side view) — front of thigh -->
-              <g class="mpart" id="m-quad-s" onclick="selectMuscle('quads')">
-                <ellipse cx="50" cy="175" rx="13" ry="32" fill="#a0aec0"/>
-              </g>
-
-              <!-- HAMSTRING (side view) — back of thigh -->
-              <g class="mpart" id="m-ham-s" onclick="selectMuscle('hamstrings')">
-                <ellipse cx="68" cy="175" rx="11" ry="30" fill="#a0aec0"/>
-              </g>
-
-              <!-- CALF (side view) — back of lower leg, gastrocnemius bulge -->
-              <g class="mpart" id="m-calf-s" onclick="selectMuscle('calves')">
-                <ellipse cx="65" cy="232" rx="10" ry="21" fill="#a0aec0"/>
-              </g>
-            </svg>
-          </div>
-
-          <!-- ── BACK VIEW ── (same coordinate space as front) -->
-          <div>
-            <div class="mslbl">Back</div>
-            <svg class="muscle-svg" viewBox="0 0 120 280" xmlns="http://www.w3.org/2000/svg">
-              <ellipse cx="60" cy="22" rx="16" ry="18" fill="#c8c8c8" opacity=".35"/>
-              <rect x="54" y="38" width="12" height="12" rx="3" fill="#c8c8c8" opacity=".35"/>
-              <ellipse cx="22" cy="136" rx="6" ry="7" fill="#c8c8c8" opacity=".3"/>
-              <ellipse cx="98" cy="136" rx="6" ry="7" fill="#c8c8c8" opacity=".3"/>
-              <ellipse cx="49" cy="258" rx="10" ry="6" fill="#c8c8c8" opacity=".3"/>
-              <ellipse cx="71" cy="258" rx="10" ry="6" fill="#c8c8c8" opacity=".3"/>
-              <rect x="47" y="118" width="26" height="14" rx="4" fill="#c8c8c8" opacity=".3"/>
-
-              <!-- TRAPS: triangle from neck base to shoulder caps.
-                   polygon points are listed clockwise: tip-top, left shoulder, right shoulder. -->
-              <g class="mpart" id="m-trap" onclick="selectMuscle('traps')">
-                <polygon points="60,40 34,63 86,63" fill="#a0aec0"/>
-              </g>
-
-              <!-- REAR DELTS -->
-              <g class="mpart" id="m-rdelt-l" onclick="selectMuscle('reardelts')"><ellipse cx="32" cy="60" rx="10" ry="10" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-rdelt-r" onclick="selectMuscle('reardelts')"><ellipse cx="88" cy="60" rx="10" ry="10" fill="#a0aec0"/></g>
-
-              <!-- LATS: wide ellipses fanning out from mid-back to armpit.
-                   cx=44/76 push them to the sides. ry=22 makes them tall and fan-like. -->
-              <g class="mpart" id="m-lat-l" onclick="selectMuscle('lats')"><ellipse cx="43" cy="85" rx="14" ry="22" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-lat-r" onclick="selectMuscle('lats')"><ellipse cx="77" cy="85" rx="14" ry="22" fill="#a0aec0"/></g>
-
-              <!-- LOWER BACK / ERECTORS: narrow rect down the spine -->
-              <g class="mpart" id="m-lb" onclick="selectMuscle('lowerback')"><rect x="49" y="99" width="22" height="22" rx="4" fill="#a0aec0"/></g>
-
-              <!-- TRICEPS: back of upper arm -->
-              <g class="mpart" id="m-tri-l" onclick="selectMuscle('triceps')"><ellipse cx="28" cy="83" rx="7" ry="17" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-tri-r" onclick="selectMuscle('triceps')"><ellipse cx="92" cy="83" rx="7" ry="17" fill="#a0aec0"/></g>
-
-              <!-- FOREARMS back -->
-              <g class="mpart" id="m-fore-bl" onclick="selectMuscle('forearms')"><ellipse cx="24" cy="117" rx="6" ry="15" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-fore-br" onclick="selectMuscle('forearms')"><ellipse cx="96" cy="117" rx="6" ry="15" fill="#a0aec0"/></g>
-
-              <!-- GLUTES: big round shapes below the lower back -->
-              <g class="mpart" id="m-glute-l" onclick="selectMuscle('glutes')"><ellipse cx="48" cy="131" rx="15" ry="15" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-glute-r" onclick="selectMuscle('glutes')"><ellipse cx="72" cy="131" rx="15" ry="15" fill="#a0aec0"/></g>
-
-              <!-- HAMSTRINGS: back of thigh, ry=30 for tall coverage -->
-              <g class="mpart" id="m-ham-l" onclick="selectMuscle('hamstrings')"><ellipse cx="48" cy="178" rx="13" ry="30" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-ham-r" onclick="selectMuscle('hamstrings')"><ellipse cx="72" cy="178" rx="13" ry="30" fill="#a0aec0"/></g>
-
-              <!-- CALVES back (gastrocnemius) -->
-              <g class="mpart" id="m-calf-bl" onclick="selectMuscle('calves')"><ellipse cx="48" cy="233" rx="9" ry="21" fill="#a0aec0"/></g>
-              <g class="mpart" id="m-calf-br" onclick="selectMuscle('calves')"><ellipse cx="72" cy="233" rx="9" ry="21" fill="#a0aec0"/></g>
-            </svg>
-          </div>
-        </div>
-
-        <!-- Intensity legend: explains what the colours mean -->
-        <div class="intensity-legend">
-          <span>7-day intensity:</span>
-          <div class="ileg-swatch" style="background:#a0aec0"></div><span>untrained</span>
-          <div class="ileg-swatch" style="background:#60a5fa"></div><span>1–2 sets</span>
-          <div class="ileg-swatch" style="background:#f59e0b"></div><span>3–5 sets</span>
-          <div class="ileg-swatch" style="background:#ef4444"></div><span>6+ sets</span>
-        </div>
-
-        <!-- Info panel: updated by selectMuscle() on click -->
-        <div class="muscle-info" id="muscle-info">
-          <div class="mi-hint">Tap a muscle to see relevant exercises</div>
-        </div>
-      </div>
-
-      <!-- Logger -->
-      <div class="card" style="margin-bottom:0">
-        <div class="ctitle">⚡ Log exercise</div>
-        <div style="margin-bottom:10px">
-          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Muscle group</label>
-          <select id="muscle-select" class="ainp" style="width:100%" onchange="onMuscleGroupChange()">
-            <option value="">— select —</option>
-            <option value="push">Push</option><option value="pull">Pull</option>
-            <option value="core">Core</option><option value="lower">Lower</option>
-            <option value="flexibility">Flexibility</option>
-          </select>
-        </div>
-        <div style="margin-bottom:10px">
-          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Movement</label>
-          <select id="movement-select" class="ainp" style="width:100%"><option value="">— select muscle group first —</option></select>
-        </div>
-        <div style="margin-bottom:10px">
-          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Number of sets</label>
-          <input type="number" id="sets-input" class="ainp" min="1" max="10" placeholder="e.g. 3" style="width:100%" oninput="buildSetRows()"/>
-        </div>
-        <div id="sets-container"></div>
-        <div style="margin-bottom:10px">
-          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Notes (optional)</label>
-          <input type="text" id="session-notes" class="ainp" placeholder="e.g. paused reps, slow eccentric…" style="width:100%"/>
-        </div>
-        <button class="abtn primary" onclick="logExercise()" style="width:100%;padding:9px">Log exercise</button>
-
-        <div style="margin-top:14px;padding:10px;background:var(--bg);border-radius:var(--r)">
-          <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:5px">📺 YouTube auto-tracking</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.65">
-          </div>
+            Sign in with Google
+          </button>
+          <p class="gcal-hint">Signing in also syncs your Life OS data across devices.</p>
         </div>
       </div>
     </div>
 
-<div class="twocol">
-      <div class="card">
-        <div class="ctitle" style="justify-content:space-between">
-          <span>📋 Session log</span>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span id="session-count" style="font-size:11px;color:var(--text3)"></span>
-            <button class="abtn" id="session-expand-btn" onclick="toggleSessionLog()" style="font-size:11px;padding:3px 9px">Show all</button>
-          </div>
-        </div>
-        <div id="session-log-list"><p class="empty-state">No sessions logged yet.</p></div>
-      </div>
-     
-      <div class="card">
-        <div class="ctitle">📈 Progress</div>
-        <select id="chart-movement-select" class="ainp" style="width:100%;margin-bottom:12px" onchange="renderChart(this.value)">
-          <option value="">— select movement —</option>
-        </select>
-        <canvas id="progress-chart" style="display:none"></canvas>
-        <p id="no-data-msg" style="font-size:12px;color:var(--text3);text-align:center;padding:1rem 0;display:none">No data for this movement yet.</p>
-        <p id="chart-hint"  style="font-size:12px;color:var(--text3);text-align:center;padding:1rem 0">Select a movement to see progress.</p>
-      </div>
-    </div>
-<div class="card" style="margin-top:var(--gap)">
-      <div class="ctitle">📝 Fitness notes</div>
-      <textarea class="notes-textarea" id="notes-fitness" placeholder="Training notes, cues, progress observations…" oninput="saveNote('fitness')"></textarea>
-      <div class="notes-saved-hint" id="notes-fitness-hint"></div>
-    </div>
-  </div>
-
-  <!-- NUTRITION -->
-  <div class="pane" id="pane-nutrition">
-    <div class="slbl">Today's macros</div>
-    <div class="macro-row">
-      <div class="macro-card"><div class="mv" id="mac-cal">—</div><div class="ml">Calories</div><div class="mt" id="mac-cal-t">target: 2400</div><div class="mbar"><div class="mbar-fill" id="mbar-cal" style="background:var(--am);width:0%"></div></div></div>
-      <div class="macro-card"><div class="mv" id="mac-pro">—</div><div class="ml">Protein (g)</div><div class="mt" id="mac-pro-t">target: 180g</div><div class="mbar"><div class="mbar-fill" id="mbar-pro" style="background:var(--g);width:0%"></div></div></div>
-      <div class="macro-card"><div class="mv" id="mac-carb">—</div><div class="ml">Carbs (g)</div><div class="mt">target: 220g</div><div class="mbar"><div class="mbar-fill" id="mbar-carb" style="background:#378ADD;width:0%"></div></div></div>
-      <div class="macro-card"><div class="mv" id="mac-fat">—</div><div class="ml">Fat (g)</div><div class="mt">target: 70g</div><div class="mbar"><div class="mbar-fill" id="mbar-fat" style="background:#D4537E;width:0%"></div></div></div>
-    </div>
-    <div class="twocol">
-      <div class="card">
-        <div class="ctitle" style="justify-content:space-between">
-          <span>🍽 Meals today</span>
-          <button class="abtn" onclick="openMealModal()" style="font-size:11px;padding:3px 9px">+ add meal</button>
-        </div>
-        <div id="meal-list"><p class="empty-state">No meals logged today.</p></div>
-      </div>
-      <div class="card">
-        <div class="ctitle">📊 Calories this week</div>
-        <canvas id="cal-chart" height="160"></canvas>
-      </div>
-    </div>
-    <div class="card" style="margin-top:var(--gap)">
-      <div class="ctitle">⚙️ Macro targets</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px">
-        <div><label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">Calories</label><input type="number" class="ainp" id="t-cal" placeholder="2400" style="width:100%" onchange="saveTargets()"/></div>
-        <div><label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">Protein (g)</label><input type="number" class="ainp" id="t-pro" placeholder="180" style="width:100%" onchange="saveTargets()"/></div>
-        <div><label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">Carbs (g)</label><input type="number" class="ainp" id="t-carb" placeholder="220" style="width:100%" onchange="saveTargets()"/></div>
-        <div><label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">Fat (g)</label><input type="number" class="ainp" id="t-fat" placeholder="70" style="width:100%" onchange="saveTargets()"/></div>
-      </div>
-    </div>
-  <div class="card" style="margin-top:var(--gap)">
-      <div class="ctitle">📝 Nutrition notes</div>
-      <textarea class="notes-textarea" id="notes-nutrition" placeholder="Meal prep ideas, how you felt, patterns you notice…" oninput="saveNote('nutrition')"></textarea>
-      <div class="notes-saved-hint" id="notes-nutrition-hint"></div>
-    </div>
-  </div>
-
-<!-- MEAL MODAL -->
-<div class="modal-bg" id="meal-modal">
-  <div class="modal">
-    <h3>Add meal / food</h3>
-    <div class="frow"><label>Name</label><input type="text" id="m-name" class="ainp" placeholder="e.g. Chicken + rice" style="width:100%"/></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div class="frow"><label>Calories</label><input type="number" id="m-cal" class="ainp" placeholder="500" style="width:100%"/></div>
-      <div class="frow"><label>Protein (g)</label><input type="number" id="m-pro" class="ainp" placeholder="40" style="width:100%"/></div>
-      <div class="frow"><label>Carbs (g)</label><input type="number" id="m-carb" class="ainp" placeholder="60" style="width:100%"/></div>
-      <div class="frow"><label>Fat (g)</label><input type="number" id="m-fat" class="ainp" placeholder="15" style="width:100%"/></div>
-    </div>
-    <div class="modal-btns">
-      <button class="abtn" onclick="closeMealModal()">Cancel</button>
-      <button class="abtn primary" onclick="addMeal()">Add</button>
-    </div>
-  </div>
-</div>
-
-  <!-- TUTORING -->
-  <div class="pane" id="pane-tutoring">
-    <div class="slbl">Overview</div>
-    <div class="tutor-metrics" id="tutor-metrics"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
-      <span class="slbl" style="margin:0">Clients</span>
-      <button class="abtn primary" onclick="openTutorModal()">+ Add client</button>
-    </div>
-    <div class="tutor-grid" id="tutor-grid"></div>
-  </div>
-
-  <!-- TUTORING MODALS -->
-  <div class="tutor-modal-bg" id="tutor-client-modal">
-    <div class="modal" style="max-width:520px;width:95%">
-      <h3 id="tutor-modal-title">New client</h3>
-      <div class="frow"><label>Name</label><input type="text" id="tc-name" class="ainp" placeholder="Student name" style="width:100%"/></div>
-      <div class="frow"><label>Subject</label><input type="text" id="tc-subject" class="ainp" placeholder="e.g. Algebra II" style="width:100%"/></div>
-      <div class="frow"><label>Hourly rate ($)</label><input type="number" id="tc-rate" class="ainp" placeholder="50" style="width:100%"/></div>
-  <div class="frow" style="margin-bottom:8px"><label>SAT scores (current)</label></div>
-      <div style="display:flex;justify-content:center;margin-bottom:8px">
-        <div style="text-align:center;min-width:120px">
-          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">Total (400–1600)</label>
-          <input type="number" id="tc-sat-total" class="ainp" placeholder="—" min="400" max="1600" step="10" style="width:120px;text-align:center;font-size:16px;font-weight:500;background:var(--bg2)" readonly/>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-        <div><label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">Math (200–800)</label><input type="number" id="tc-sat-math" class="ainp" placeholder="e.g. 620" min="200" max="800" step="10" style="width:100%" oninput="updateSatTotal()"/></div>
-        <div><label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">R&W (200–800)</label><input type="number" id="tc-sat-rw" class="ainp" placeholder="e.g. 580" min="200" max="800" step="10" style="width:100%" oninput="updateSatTotal()"/></div>
-      </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-        <div>
-          <div style="font-size:11px;color:var(--text2);margin-bottom:6px">Onboarding steps</div>
-          <div style="display:flex;flex-direction:column;gap:6px" id="tc-onboarding-checks">
-            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-intro" style="accent-color:var(--g)"/> Introductory session</label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-diag" style="accent-color:var(--g)"/> Diagnostic practice test</label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-math" style="accent-color:var(--g)"/> Math fundamentals evaluated</label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-gram" style="accent-color:var(--g)"/> Grammar evaluated</label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ob-prac" style="accent-color:var(--g)"/> Practice assigned & spot-checked</label>
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column">
-          <div style="font-size:11px;color:var(--text2);margin-bottom:6px">Tutee notes</div>
-          <textarea id="tc-notes" class="ainp" placeholder="Strengths, weaknesses, test dates, personality, what works…" style="width:100%;flex:1;min-height:120px;resize:vertical;box-sizing:border-box"></textarea>
-        </div>
-      </div>
-      <div class="modal-btns">
-        <button class="abtn" onclick="closeTutorModal()">Cancel</button>
-        <button class="abtn primary" onclick="saveTutorClient()">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="tutor-modal-bg" id="tutor-session-modal">
-    <div class="modal">
-      <h3>Log session</h3>
-      <div class="frow"><label>Date</label><input type="date" id="ts-date" class="ainp" style="width:100%"/></div>
-      <div class="frow"><label>Duration (minutes)</label><input type="number" id="ts-dur" class="ainp" value="60" min="15" step="15" style="width:100%"/></div>
-      <div class="modal-btns">
-        <button class="abtn" onclick="closeTutorSessionModal()">Cancel</button>
-        <button class="abtn primary" onclick="saveTutorSession()">Log</button>
-      </div>
-    </div>
-  </div>
-
-<!-- APPEAL -->
-  <div class="pane" id="pane-appeal">
-    <div class="slbl">Daily checklist</div>
-    <div class="twocol" style="margin-bottom:var(--gap)">
-      <div class="card">
-        <div class="ctitle" style="justify-content:space-between">
-          <span>✓ Today's checklist</span>
-          <span id="appeal-date" style="font-size:11px;color:var(--text3)"></span>
-        </div>
-        <div class="appeal-checks" id="appeal-checks"></div>
-        <div class="adrow" style="margin-top:10px">
-          <input class="ainp" id="appeal-new-item" placeholder="Add checklist item…" onkeydown="if(event.key==='Enter')addAppealItem()"/>
-          <button class="abtn" onclick="addAppealItem()">+</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="ctitle" style="justify-content:space-between">
-          <span>📊 Consistency (28 days)</span>
-          <span id="appeal-pct" style="font-size:13px;font-weight:500;color:var(--g)"></span>
-        </div>
-        <div class="appeal-streak-grid" id="appeal-streak-grid"></div>
-        <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">
-          <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><div style="width:10px;height:10px;border-radius:2px;background:var(--g)"></div>All done</div>
-          <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><div style="width:10px;height:10px;border-radius:2px;background:var(--am)"></div>Partial</div>
-          <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><div style="width:10px;height:10px;border-radius:2px;background:var(--bg)"></div>Missed</div>
-        </div>
-      </div>
-    </div>
     <div class="card">
-      <div class="ctitle">📝 Appeal notes</div>
-      <textarea class="notes-textarea" id="notes-appeal" placeholder="Personal notes, goals, reflections on your appeal journey…" oninput="saveNote('appeal')"></textarea>
-      <div class="notes-saved-hint" id="notes-appeal-hint"></div>
+      <div class="card-title">✓ Daily habits</div>
+      <div id="habit-list"></div>
+      <div class="add-row">
+        <input class="add-input" id="new-habit-input" placeholder="Add habit..." onkeydown="if(event.key==='Enter')addHabit()" />
+        <button class="add-btn" onclick="addHabit()">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">⚡ Lift tracker</div>
+      <div id="lift-list"></div>
+      <div class="add-row" style="margin-top:10px">
+        <input class="add-input" id="new-lift-input" placeholder="Movement..." style="flex:1.5" />
+        <input class="add-input" id="new-lift-val" placeholder="e.g. 3×8 @ 40lb" style="flex:2" onkeydown="if(event.key==='Enter')addLift()" />
+        <button class="add-btn" onclick="addLift()">+</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📵 Screen time log</div>
+      <div class="screen-summary">
+        <div class="screen-box"><div class="sv" id="sc-today">—</div><div class="sl">today (hrs)</div></div>
+        <div class="screen-box"><div class="sv" id="sc-avg">—</div><div class="sl">7-day avg</div></div>
+        <div class="screen-box"><div class="sv" id="sc-best">—</div><div class="sl">best day</div></div>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar-label"><span>this week</span><span id="sc-week-label"></span></div>
+        <div id="sc-week-bars"></div>
+      </div>
+      <div class="add-row" style="margin-top:10px">
+        <input class="add-input" id="sc-input" type="number" min="0" max="16" step="0.5" placeholder="Log today's hrs (e.g. 2.5)" onkeydown="if(event.key==='Enter')logScreen()" />
+        <button class="add-btn" onclick="logScreen()">Log</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">📅 Workout heatmap</div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--color-text-tertiary);margin-bottom:6px">
+        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+      </div>
+      <div class="week-grid" id="heatmap-grid"></div>
+      <div style="margin-top:10px;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--color-text-tertiary)">
+        <span>less</span>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--color-bg-secondary)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:#9FE1CB"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:#1D9E75"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:#0F6E56"></div>
+        <span>more</span>
+        <span style="margin-left:auto;cursor:pointer;color:var(--color-text-secondary)" onclick="logWorkout()">+ log workout</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🎯 Goals & milestones</div>
+      <div id="goals-list"></div>
+      <div class="add-row">
+        <input class="add-input" id="new-goal-input" placeholder="Add goal..." style="flex:3" onkeydown="if(event.key==='Enter')addGoal()" />
+        <select class="add-input" id="new-goal-cat" style="flex:1;max-width:120px">
+          <option value="academic">Academic</option>
+          <option value="fitness">Fitness</option>
+          <option value="professional">Professional</option>
+          <option value="personal">Personal</option>
+        </select>
+        <button class="add-btn" onclick="addGoal()">+</button>
+      </div>
     </div>
   </div>
 </div>
-<!-- =====================================================================
-     JAVASCRIPT — all logic lives here, after the HTML
-     Sections: 1.Constants  2.Tabs  3.Home render  4.Habits  5.Goals
-               6.Screen time  7.Heatmap  8.Metrics  9.Muscle diagram
-               10.Exercise logger  11.Session log  12.Progress chart
-               13.Nutrition  14.Init
-===================================================================== -->
-<script>
+</div>
+</div>
+  <!-- FITNESS PANE -->
+<div class="pane" id="pane-fitness">
+  <h2 style="font-size:15px;font-weight:500;margin-bottom:1rem">Workout Logger</h2>
 
-// ── 1. CONSTANTS & DATA ───────────────────────────────────────────────
+  <div class="card" style="margin-top:1rem">
+  <div class="card-title">📈 Progress</div>
+
+  <select id="chart-movement-select" class="add-input"
+          style="margin-bottom:1rem;display:block;width:100%">
+    <option value="">-- select movement --</option>
+  </select>
+
+  <canvas id="progress-chart"></canvas>
+
+  <p id="no-data-msg" style="font-size:13px;
+     color:var(--color-text-tertiary);text-align:center;
+     padding:1rem 0;display:none">
+    No data yet for this movement.
+  </p>
+</div>
+
+  <div class="card">
+    <div class="card-title">⚡ Log Exercise</div>
+
+    <label style="font-size:12px;color:var(--color-text-secondary)">Muscle Group</label>
+    <select id="muscle-select" class="add-input" style="margin:4px 0 12px;display:block;width:100%">
+      <option value="">-- select --</option>
+      <option value="push">Push</option>
+      <option value="pull">Pull</option>
+      <option value="core">Core</option>
+      <option value="lower">Lower</option>
+      <option value="flexibility">Flexibility</option>
+    </select>
+
+    <label style="font-size:12px;color:var(--color-text-secondary)">Movement</label>
+    <select id="movement-select" class="add-input" style="margin:4px 0 12px;display:block;width:100%">
+      <option value="">-- select muscle group first --</option>
+    </select>
+
+    <label style="font-size:12px;color:var(--color-text-secondary)">Number of Sets</label>
+    <input type="number" id="sets-input" class="add-input" min="1" max="10" placeholder="e.g. 3" style="margin:4px 0 12px;display:block;width:100%"/>
+
+    <div id="sets-container"></div>
+
+    <button class="add-btn" id="log-btn" style="margin-top:12px;width:100%;padding:10px">Log Exercise</button>
+  </div>
+</div>
+<script>
+// ===================== FIREBASE SETUP =====================
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBHSuq1FYzEl9u22VtXjKxR1znFg3foGJ8",
+  authDomain: "life-os-b938d.firebaseapp.com",
+  projectId: "life-os-b938d",
+  storageBucket: "life-os-b938d.firebasestorage.app",
+  messagingSenderId: "650278523710",
+  appId: "1:650278523710:web:3b862f4c8b2e5833f9126f"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
 const DAY_MS = 86400000;
-const today  = () => new Date().toISOString().slice(0, 10);
-const fmt    = d  => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-const MOVEMENTS = {
-  push:        ['Chest Fly','Incline DB press','Flat DB press','Dips','DB Skull Crusher','DB Overhead Tricep Extension','Tricep Push-ups','DB Front Raise','DB Lateral Raise','DB Overhead Press','DB Floor Press', 'Tricep Kickback'],
-  pull:        ['Pull-ups','Chin-ups','DB row (single arm)','DB chest-supported row','DB face pull','DB hammer curl','DB incline bicep curl','DB Zottman curl','Inverted row'],
-  core:        ['Hanging Knee Raise','Hanging Leg Raise','V-ups','DB Russian Twist','Plank','Ab wheel rollout','Hollow body hold'],
-  lower:       ['DB Romanian Deadlift','Pistol Squat','DB Explosive Split Squat','DB Bulgarian split squat','DB Goblet squat','DB / One Leg Calf Raise','Step-ups','Nordic curl'],
-  flexibility: ['Head Through Knees','Full split','Chest to Floor','Jefferson curl','Shoulder dislocates','Couch stretch','Pigeon pose']
-};
+function today() { return new Date().toISOString().slice(0,10); }
+function fmt(d) { return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
 
-const MUSCLE_MAP = {
-  // ids: all SVG element IDs that belong to this muscle group across ALL three views.
-  // When a muscle is selected, every id in this list gets highlighted; everything else dims.
-  // The side view adds new IDs (m-*-s suffix) for the same logical muscle.
-  chest:      { ids: ['m-chest-l','m-chest-r','m-chest-s'],                            label: 'Chest (pectorals)',       moves: ['Incline DB press','Flat DB press','Dips','DB Floor Press','Tricep Push-ups'] },
-  shoulders:  { ids: ['m-fdelt-l','m-fdelt-r','m-sdelt'],                              label: 'Shoulders',               moves: ['DB Overhead Press','DB Front Raise','DB Lateral Raise','Incline DB press'] },
-  reardelts:  { ids: ['m-rdelt-l','m-rdelt-r'],                                        label: 'Rear delts',              moves: ['DB face pull','DB chest-supported row','DB row (single arm)'] },
-  traps:      { ids: ['m-trap'],                                                       label: 'Trapezius',               moves: ['DB face pull','DB chest-supported row','Pull-ups','Inverted row'] },
-  lats:       { ids: ['m-lat-l','m-lat-r','m-lat-s'],                                  label: 'Lats',                    moves: ['Pull-ups','Chin-ups','DB row (single arm)','Inverted row'] },
-  biceps:     { ids: ['m-bic-l','m-bic-r','m-bic-s'],                                  label: 'Biceps',                  moves: ['Chin-ups','DB hammer curl','DB incline bicep curl','DB Zottman curl'] },
-  triceps:    { ids: ['m-tri-l','m-tri-r','m-tri-s'],                                  label: 'Triceps',                 moves: ['Dips','DB Skull Crusher','DB Overhead Tricep Extension','Tricep Push-ups'] },
-  abs:        { ids: ['m-abs','m-obl-l','m-obl-r','m-abs-s'],                          label: 'Core / Abs',              moves: ['Hanging Knee Raise','Hanging Leg Raise','V-ups','DB Russian Twist','Ab wheel rollout','Hollow body hold'] },
-  lowerback:  { ids: ['m-lb','m-lb-s'],                                                label: 'Lower back / Erectors',   moves: ['DB Romanian Deadlift','Jefferson curl'] },
-  quads:      { ids: ['m-quad-l','m-quad-r','m-quad-s'],                               label: 'Quadriceps',              moves: ['Pistol Squat','DB Explosive Split Squat','DB Bulgarian split squat','DB Goblet squat','Step-ups'] },
-  hamstrings: { ids: ['m-ham-l','m-ham-r','m-ham-s'],                                  label: 'Hamstrings',              moves: ['DB Romanian Deadlift','Nordic curl','DB Bulgarian split squat'] },
-  glutes:     { ids: ['m-glute-l','m-glute-r','m-glute-s'],                            label: 'Glutes',                  moves: ['DB Romanian Deadlift','DB Explosive Split Squat','DB Bulgarian split squat','Step-ups'] },
-  calves:     { ids: ['m-calf-fl','m-calf-fr','m-calf-bl','m-calf-br','m-calf-s'],     label: 'Calves',                  moves: ['DB / One Leg Calf Raise'] },
-  forearms:   { ids: ['m-fore-fl','m-fore-fr','m-fore-bl','m-fore-br'],                label: 'Forearms',                moves: ['DB Zottman curl','Pull-ups','DB row (single arm)'] }
-};
-
-const GROUP_COLORS = { push:'#E1F5EE', pull:'#E6F1FB', core:'#FAEEDA', lower:'#FAECE7', flexibility:'#FBEAF0' };
-const GROUP_TEXT   = { push:'#0F6E56', pull:'#185FA5', core:'#854F0B', lower:'#993C1D', flexibility:'#993556' };
-const CAT_ICON     = { academic:'🎓', fitness:'💪', professional:'💼', personal:'👤' };
-
-// Main persisted state
-let state = JSON.parse(localStorage.getItem('life_os_v2') || 'null') || {
-  habits: [
-    { id:1, name:'Train (home)',              log:[] },
-    { id:2, name:'No doomscroll before noon', log:[] },
-    { id:3, name:'Skincare routine',          log:[] },
-    { id:4, name:'Read 10 min',               log:[] }
+// ===================== DATA LAYER =====================
+// localStorage is now just a fast local cache. Firestore (per signed-in user) is the source of truth.
+let state = JSON.parse(localStorage.getItem('life_os_v1') || 'null') || {
+  habits:[
+    {id:1,name:'Train (home)',log:[]},
+    {id:2,name:'No doomscroll before noon',log:[]},
+    {id:3,name:'Skincare routine',log:[]},
+    {id:4,name:'Read 10 min',log:[]}
   ],
-  screen: {},    // "YYYY-MM-DD" -> { total: number|null, yt: number|null }
-  workouts: {},  // "YYYY-MM-DD" -> count
-  goals: [
-    { id:1, title:"Make Dean's List — Fall '25",          cat:'academic',     status:'pending' },
-    { id:2, title:'Reach 170lb lean (cut ~10lb fat)',     cat:'fitness',      status:'active'  },
-    { id:3, title:'Land research or internship by Dec',   cat:'professional', status:'active'  },
-    { id:4, title:'Consistent upper body program (8wks)', cat:'fitness',      status:'active'  }
+  lifts:[
+    {id:1,name:'Pull-ups',last:'3×8 BW',prev:'3×7 BW',delta:'up'},
+    {id:2,name:'Dips',last:'3×10 BW',prev:'3×10 BW',delta:'same'},
+    {id:3,name:'DB incline press',last:'3×8 @ 35lb',prev:'3×8 @ 30lb',delta:'up'},
+    {id:4,name:'DB row',last:'3×10 @ 45lb',prev:'3×8 @ 45lb',delta:'up'},
+    {id:5,name:'DB curl',last:'3×12 @ 20lb',prev:'3×12 @ 20lb',delta:'same'}
   ],
-  nutrition: { meals:{}, targets:{ cal:2400, pro:180, carb:220, fat:70 } },
-  nextId: 10
+  screen:{},workouts:{},
+  goals:[
+    {id:1,title:"Make Dean's List — Fall '25",cat:'academic',status:'pending'},
+    {id:2,title:'Reach 170lb lean (cut ~10lb fat)',cat:'fitness',status:'active'},
+    {id:3,title:'Land research or internship by Dec',cat:'professional',status:'active'},
+    {id:4,title:'Consistent upper body program (8 wks)',cat:'fitness',status:'active'}
+  ],
+  nextId:10
 };
+let workoutSessions = JSON.parse(localStorage.getItem('workout-sessions') || '[]');
 
-const getSessions  = ()    => JSON.parse(localStorage.getItem('workout-sessions') || '[]');
-const saveSessions = arr   => localStorage.setItem('workout-sessions', JSON.stringify(arr));
-const save         = ()    => localStorage.setItem('life_os_v2', JSON.stringify(state));
+let gcalToken = null;
+let gcalUser = null;
+let currentUid = null;
+let syncTimer = null;
 
-
-// ── 2. TABS ───────────────────────────────────────────────────────────
-
-function showTab(t) {
-  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
-  document.querySelector(`.tab[onclick="showTab('${t}')"]`).classList.add('active');
-  document.getElementById('pane-' + t).classList.add('active');
-  if (t === 'fitness')   { renderSessionLog(); populateChartDropdown(); applyIntensityColors(); loadNote('fitness'); }
-  if (t === 'nutrition') { renderNutrition(); loadNote('nutrition'); }
-  if (t === 'tutoring')  { renderTutoring(); loadNote('tutoring'); }
-  if (t === 'appeal')    { renderAppeal(); loadNote('appeal'); }
+function saveLocal() {
+  localStorage.setItem('life_os_v1', JSON.stringify(state));
+  localStorage.setItem('workout-sessions', JSON.stringify(workoutSessions));
 }
 
+function setSyncStatus(mode) {
+  // mode: 'off' | 'syncing' | 'on'
+  const dot = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  if (!dot || !label) return;
+  dot.className = 'sync-dot' + (mode === 'on' ? ' on' : mode === 'syncing' ? ' syncing' : '');
+  label.textContent = mode === 'on' ? 'synced' : mode === 'syncing' ? 'syncing…' : 'local only';
+}
 
-// ── 3. HOME RENDER ────────────────────────────────────────────────────
+function save() {
+  saveLocal();
+  queueCloudSync();
+}
+
+function queueCloudSync() {
+  if (!currentUid) return;
+  setSyncStatus('syncing');
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    db.collection('users').doc(currentUid).set({
+      state, workoutSessions,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => setSyncStatus('on'))
+      .catch(err => { console.error('Cloud sync failed', err); setSyncStatus('off'); });
+  }, 800);
+}
+
+auth.onAuthStateChanged(user => {
+  if (!user) { currentUid = null; setSyncStatus('off'); return; }
+  currentUid = user.uid;
+  gcalUser = { name: user.displayName, email: user.email, picture: user.photoURL };
+  const badge = document.getElementById('gcal-status-badge');
+  if (badge) badge.textContent = user.email || '';
+  setSyncStatus('syncing');
+
+  db.collection('users').doc(currentUid).get().then(doc => {
+    if (doc.exists) {
+      const data = doc.data();
+      if (data.state) state = data.state;
+      if (data.workoutSessions) workoutSessions = data.workoutSessions;
+      saveLocal();
+    } else {
+      // first time this account has signed in — push whatever's local up to the cloud
+      queueCloudSync();
+    }
+    setSyncStatus('on');
+    render();
+    populateChartDropdown();
+
+    // Calendar access token isn't persisted by Firebase across reloads —
+    // if we don't already have one this session, prompt to (re)load it.
+    if (!gcalToken) {
+      document.getElementById('gcal-content').innerHTML =
+        `<div class="gcal-connect-wrap"><p class="gcal-hint">Signed in as ${user.email}.</p>` +
+        `<button class="gcal-connect-btn" onclick="signInWithGoogle()">Load Calendar</button></div>`;
+    }
+  });
+});
+
+function signInWithGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
+  auth.signInWithPopup(provider).then(result => {
+    const credential = firebase.auth.GoogleAuthProvider.credentialFromResult(result);
+    gcalToken = credential.accessToken;
+    gcalUser = { name: result.user.displayName, email: result.user.email, picture: result.user.photoURL };
+    const badge = document.getElementById('gcal-status-badge');
+    if (badge) badge.textContent = gcalUser.email || '';
+    fetchUpcomingEvents();
+  }).catch(err => {
+    document.getElementById('gcal-content').innerHTML = `<p class="gcal-error">Auth error: ${err.message}</p><div class="gcal-connect-wrap"><button class="gcal-connect-btn" onclick="signInWithGoogle()">Try again</button></div>`;
+  });
+}
+
+function fetchUpcomingEvents() {
+  const content = document.getElementById('gcal-content');
+  content.innerHTML = '<p class="gcal-loading">Loading events...</p>';
+  const now = new Date().toISOString();
+  const end = new Date(Date.now() + 7 * DAY_MS).toISOString();
+
+  fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
+    headers: { Authorization: 'Bearer ' + gcalToken }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) { content.innerHTML = `<p class="gcal-error">${data.error.message}</p>`; return; }
+    const calendars = (data.items || []);
+    const fetches = calendars.map(cal =>
+      fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events?timeMin=${encodeURIComponent(now)}&timeMax=${encodeURIComponent(end)}&singleEvents=true&orderBy=startTime&maxResults=50`, {
+        headers: { Authorization: 'Bearer ' + gcalToken }
+      })
+      .then(r => r.json())
+      .then(d => (d.items || []).map(ev => ({ ...ev, _calColor: cal.backgroundColor || null })))
+      .catch(() => [])
+    );
+    Promise.all(fetches).then(results => {
+      const all = results.flat().sort((a, b) => {
+        const ta = a.start.dateTime || a.start.date;
+        const tb = b.start.dateTime || b.start.date;
+        return ta < tb ? -1 : ta > tb ? 1 : 0;
+      });
+      renderEvents(all);
+    });
+  })
+  .catch(() => { content.innerHTML = '<p class="gcal-error">Failed to load calendars.</p>'; });
+}
+
+function renderEvents(events) {
+  const content = document.getElementById('gcal-content');
+  const colors = ['#378ADD','#1D9E75','#BA7517','#D4537E','#7F77DD','#D85A30'];
+  const calColorMap = {};
+  let colorIdx = 0;
+
+  const grouped = {};
+  events.forEach(ev => {
+    const dateKey = (ev.start.dateTime || ev.start.date).slice(0,10);
+    if (!grouped[dateKey]) grouped[dateKey] = [];
+    grouped[dateKey].push(ev);
+  });
+
+  const todayKey = today();
+  const tomorrowKey = new Date(Date.now() + DAY_MS).toISOString().slice(0,10);
+
+  const html = Object.keys(grouped).sort().map(dateKey => {
+    let label;
+    if (dateKey === todayKey) label = 'Today';
+    else if (dateKey === tomorrowKey) label = 'Tomorrow';
+    else label = new Date(dateKey + 'T00:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+
+    const rows = grouped[dateKey].map(ev => {
+      const calId = ev.organizer?.email || 'default';
+      const dotColor = ev._calColor || (calColorMap[calId] || (calColorMap[calId] = colors[colorIdx++ % colors.length]));
+      const timeStr = ev.start.date ? 'All day' : (() => {
+        const s = new Date(ev.start.dateTime), e = new Date(ev.end.dateTime);
+        const f = t => t.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+        return `${f(s)} – ${f(e)}`;
+      })();
+      return `<div class="event-row">
+        <div class="event-dot" style="background:${dotColor}"></div>
+        <div class="event-body">
+          <div class="event-title">${ev.summary || '(No title)'}</div>
+          <div class="event-time">${timeStr}</div>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="event-day-label">${label}</div>${rows}`;
+  }).join('');
+
+  const userHtml = gcalUser ? `<div class="gcal-user">${gcalUser.picture ? `<img src="${gcalUser.picture}" alt="">` : ''}<span>${gcalUser.name || gcalUser.email}</span><span class="gcal-signout" onclick="signOut()">sign out</span></div>` : '';
+  content.innerHTML = userHtml + (html || '<p style="font-size:13px;color:var(--color-text-tertiary);padding:8px 0">No upcoming events in the next 7 days.</p>');
+}
+
+function signOut() {
+  auth.signOut();
+  gcalToken = null; gcalUser = null; currentUid = null;
+  setSyncStatus('off');
+  document.getElementById('gcal-status-badge').textContent = '';
+  document.getElementById('gcal-content').innerHTML = `<div class="gcal-connect-wrap"><button class="gcal-connect-btn" onclick="signInWithGoogle()"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Sign in with Google</button><p class="gcal-hint">Signing in also syncs your Life OS data across devices.</p></div>`;
+}
 
 function render() {
   const td = today();
-  document.getElementById('today-date').textContent =
-    new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
-  renderHabits(td); renderGoals(); renderScreen(td); renderHeatmap(td); renderMetrics(td);
+  document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  renderHabits(td); renderLifts(); renderScreen(td); renderHeatmap(td); renderGoals(); renderMetrics(td);
 }
-
-
-// ── 4. HABITS ─────────────────────────────────────────────────────────
 
 function renderHabits(td) {
   const el = document.getElementById('habit-list');
-  if (!state.habits.length) { el.innerHTML = '<p class="empty-state">No habits yet.</p>'; return; }
+  if (!state.habits.length) { el.innerHTML = '<p style="font-size:13px;color:var(--color-text-tertiary);padding:8px 0">No habits yet.</p>'; return; }
   el.innerHTML = state.habits.map(h => {
-    const dots = Array.from({ length:7 }, (_, i) => {
-      const d   = new Date(Date.now() - (6-i)*DAY_MS).toISOString().slice(0,10);
-      const cls = d===td ? (h.log.includes(d)?'done':'today') : (h.log.includes(d)?'done':'miss');
-      return `<div class="dot ${cls}" title="${d}"></div>`;
+    const last7 = Array.from({length:7},(_,i) => {
+      const d = new Date(Date.now()-(6-i)*DAY_MS).toISOString().slice(0,10);
+      const done = h.log.includes(d), isToday = d === td;
+      return `<div class="dot${isToday?(done?' done':' today'):(done?' done':' miss')}" title="${d}"></div>`;
     }).join('');
-    const doneToday = h.log.includes(td);
-    return `<div class="hrow">
+    const doneToday = h.log.includes(td), streak = calcStreak(h.log, td);
+    return `<div class="habit-row">
       <div>
-        <div class="hname">${h.name}</div>
-        <div style="display:flex;align-items:center;gap:5px;margin-top:3px">
-          <div class="drow">${dots}</div>
-          <span class="hstrk">${calcStreak(h.log,td)}d</span>
+        <div class="habit-name">${h.name}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+          <div class="dot-row">${last7}</div>
+          <span class="habit-streak">${streak}d streak</span>
         </div>
       </div>
-      <div class="hrow-actions">
-        <button class="logbtn ${doneToday?'logged':''}" onclick="toggleHabit(${h.id})">${doneToday?'✓':'log'}</button>
-        <button class="delbtn" onclick="deleteHabit(${h.id})" title="Remove">✕</button>
-      </div>
+      <button class="log-btn${doneToday?' logged':''}" onclick="toggleHabit(${h.id})">${doneToday?'✓ done':'log'}</button>
     </div>`;
   }).join('');
 }
 
 function calcStreak(log, td) {
-  // Count consecutive days backwards from td where the habit was completed
-  let streak = 0, d = new Date(td);
-  while (log.includes(d.toISOString().slice(0,10))) { streak++; d = new Date(d - DAY_MS); }
-  return streak;
+  let s = 0, d = new Date(td);
+  while (true) { const ds = d.toISOString().slice(0,10); if (log.includes(ds)) { s++; d = new Date(d-DAY_MS); } else break; }
+  return s;
 }
 
 function toggleHabit(id) {
-  const h  = state.habits.find(x => x.id===id); if (!h) return;
-  const td = today(), i = h.log.indexOf(td);
-  i > -1 ? h.log.splice(i,1) : h.log.push(td);
+  const td = today(), h = state.habits.find(x=>x.id===id); if (!h) return;
+  const i = h.log.indexOf(td); if (i>-1) h.log.splice(i,1); else h.log.push(td);
   save(); render();
 }
 
 function addHabit() {
   const inp = document.getElementById('new-habit-input'), v = inp.value.trim(); if (!v) return;
-  state.habits.push({ id:state.nextId++, name:v, log:[] }); inp.value=''; save(); render();
+  state.habits.push({id:state.nextId++,name:v,log:[]}); inp.value=''; save(); render();
 }
 
-function deleteHabit(id) {
-  state.habits = state.habits.filter(h => h.id !== id); save(); render();
+function renderLifts() {
+  const el = document.getElementById('lift-list');
+  if (!state.lifts.length) { el.innerHTML = '<p style="font-size:13px;color:var(--color-text-tertiary);padding:8px 0">No lifts tracked yet.</p>'; return; }
+  el.innerHTML = state.lifts.map(l => `
+    <div class="lift-row">
+      <div class="lift-name">${l.name}</div>
+      <div class="lift-right">
+        <div class="lift-val">${l.last}</div>
+        <div class="lift-delta ${l.delta==='up'?'up':'same'}">${l.delta==='up'?'↑ PR':'—'}</div>
+      </div>
+    </div>`).join('');
 }
 
+function addLift() {
+  const ni = document.getElementById('new-lift-input'), vi = document.getElementById('new-lift-val');
+  const name = ni.value.trim(), val = vi.value.trim(); if (!name) return;
+  state.lifts.push({id:state.nextId++,name,last:val||'—',prev:'—',delta:'same'});
+  ni.value=''; vi.value=''; save(); render();
+}
 
-// ── 5. GOALS ──────────────────────────────────────────────────────────
+function renderScreen(td) {
+  const sc = state.screen, todayVal = sc[td];
+  document.getElementById('sc-today').textContent = todayVal != null ? todayVal+'h' : '—';
+  document.getElementById('sc-today').className = 'sv'+(todayVal==null?'':todayVal<=2?' good':todayVal<=4?'':' bad');
+  const vals = Object.values(sc).map(Number).filter(n=>!isNaN(n));
+  const avg = vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : '—';
+  const best = vals.length ? Math.min(...vals) : '—';
+  document.getElementById('sc-avg').textContent = avg !== '—' ? avg+'h' : '—';
+  document.getElementById('sc-best').textContent = best !== '—' ? best+'h' : '—';
+  document.getElementById('screen-val').textContent = todayVal != null ? todayVal+'h' : '—';
+  document.getElementById('screen-card').className = 'metric-card'+(todayVal==null?'':todayVal<=2?' good':todayVal<=4?' warn':' bad');
+  const days7 = Array.from({length:7},(_,i)=>new Date(Date.now()-(6-i)*DAY_MS).toISOString().slice(0,10));
+  document.getElementById('sc-week-bars').innerHTML = days7.map(d => {
+    const v = sc[d]; if (v==null) return '';
+    const pct = Math.min(100,(v/8)*100), cls = v<=2?'green':v<=4?'amber':'red';
+    return `<div class="bar-wrap"><div class="bar-label"><span>${fmt(d)}</span><span>${v}h</span></div><div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div></div>`;
+  }).join('');
+  document.getElementById('sc-week-label').textContent = vals.length ? `avg ${avg}h` : '';
+}
+
+function logScreen() {
+  const inp = document.getElementById('sc-input'), v = parseFloat(inp.value); if (isNaN(v)||v<0) return;
+  state.screen[today()] = v; inp.value=''; save(); render();
+}
+
+function renderHeatmap(td) {
+  const grid = document.getElementById('heatmap-grid');
+  const days28 = Array.from({length:28},(_,i)=>new Date(Date.now()-(27-i)*DAY_MS).toISOString().slice(0,10));
+  const future = Array.from({length:(7-(days28.length%7))%7},()=>null);
+  grid.innerHTML = [...days28,...future].map(d => {
+    if (!d) return `<div class="week-cell future"></div>`;
+    const v = state.workouts[d]||0, cls = v===0?'s0':v===1?'s2':v>=2?'s4':'s1', isT = d===td;
+    return `<div class="week-cell ${cls}" title="${d}: ${v} session(s)" onclick="logWorkoutDay('${d}')">${isT?'·':''}</div>`;
+  }).join('');
+}
+
+function logWorkout() { const td=today(); state.workouts[td]=(state.workouts[td]||0)+1; save(); render(); }
+function logWorkoutDay(d) { state.workouts[d]=((state.workouts[d]||0)+1)%4; save(); render(); }
 
 function renderGoals() {
   const el = document.getElementById('goals-list');
-  if (!state.goals.length) { el.innerHTML = '<p class="empty-state">No goals yet.</p>'; return; }
+  if (!state.goals.length) { el.innerHTML = '<p style="font-size:13px;color:var(--color-text-tertiary);padding:8px 0">No goals yet.</p>'; return; }
+  const catIcon = {academic:'🎓',fitness:'💪',professional:'💼',personal:'👤'};
   el.innerHTML = state.goals.map(g => `
-    <div class="grow">
-      <span style="font-size:15px;margin-top:1px">${CAT_ICON[g.cat]||'🎯'}</span>
-      <div class="gbody"><div class="gtitle">${g.title}</div><div class="gmeta">${g.cat}</div></div>
-      <div class="grow-actions">
-        <button class="gstat ${g.status}" onclick="cycleGoal(${g.id})">${g.status}</button>
-        <button class="delbtn" onclick="deleteGoal(${g.id})" title="Remove">✕</button>
+    <div class="goal-row">
+      <span style="font-size:16px;margin-top:1px">${catIcon[g.cat]||'🎯'}</span>
+      <div class="goal-body">
+        <div class="goal-title">${g.title}</div>
+        <div class="goal-meta">${g.cat}</div>
       </div>
+      <span class="goal-status ${g.status}" onclick="cycleGoal(${g.id})">${g.status}</span>
     </div>`).join('');
   document.getElementById('goals-active-val').textContent = state.goals.filter(g=>g.status==='active').length;
 }
@@ -958,655 +699,189 @@ function cycleGoal(id) {
 }
 
 function addGoal() {
-  const ti=document.getElementById('new-goal-input'), ci=document.getElementById('new-goal-cat');
-  const t=ti.value.trim(); if (!t) return;
-  state.goals.push({ id:state.nextId++, title:t, cat:ci.value, status:'active' }); ti.value=''; save(); render();
+  const ti = document.getElementById('new-goal-input'), ci = document.getElementById('new-goal-cat');
+  const t = ti.value.trim(); if (!t) return;
+  state.goals.push({id:state.nextId++,title:t,cat:ci.value,status:'active'}); ti.value=''; save(); render();
 }
-
-function deleteGoal(id) {
-  state.goals = state.goals.filter(g=>g.id!==id); save(); render();
-}
-
-
-// ── 6. SCREEN TIME ────────────────────────────────────────────────────
-// Screen values are stored as objects: { total: number|null, yt: number|null }
-// Legacy entries that are plain numbers are treated as total-only.
-
-function getScreenDay(d) {
-  const v = state.screen[d];
-  if (v == null) return { total:null, yt:null };
-  if (typeof v === 'number') return { total:v, yt:null }; // backwards compat
-  return v;
-}
-
-function renderScreen(td) {
-  const { total, yt } = getScreenDay(td);
-  const todayEl = document.getElementById('sc-today');
-  todayEl.textContent = total!=null ? total+'h' : '—';
-  todayEl.className   = 'sv'+(total==null?'':total<=2?' good':total<=4?'':' bad');
-  const ytEl = document.getElementById('sc-yt');
-  ytEl.textContent = yt!=null ? yt+'h' : '—';
-  ytEl.className   = 'sv'+(yt==null?'':yt<=0.5?' good':yt<=1.5?'':' bad');
-
-  const allTotals = Object.values(state.screen)
-    .map(v => typeof v==='number' ? v : v.total)
-    .filter(n => n!=null && !isNaN(n));
-  const avg = allTotals.length ? (allTotals.reduce((a,b)=>a+b,0)/allTotals.length).toFixed(1) : '—';
-  document.getElementById('sc-avg').textContent = avg!=='—' ? avg+'h' : '—';
-  document.getElementById('screen-val').textContent = total!=null ? total+'h' : '—';
-  document.getElementById('screen-card').className = 'mc'+(total==null?'':total<=2?' good':total<=4?' warn':' bad');
-
-  const days7 = Array.from({length:7},(_,i)=>new Date(Date.now()-(6-i)*DAY_MS).toISOString().slice(0,10));
-  document.getElementById('sc-week-bars').innerHTML = days7.map(d => {
-    const { total:v, yt:y } = getScreenDay(d); if (v==null) return '';
-    const pct=Math.min(100,(v/8)*100), cls=v<=2?'green':v<=4?'amber':'red';
-    const ytTag = y!=null ? ` <span style="color:var(--rd)">(YT: ${y}h)</span>` : '';
-    return `<div class="bwrap"><div class="blbl"><span>${fmt(d)}</span><span>${v}h${ytTag}</span></div>
-      <div class="btrack"><div class="bfill ${cls}" style="width:${pct}%"></div></div></div>`;
-  }).join('');
-}
-
-function logScreen() {
-  const inp=document.getElementById('sc-input'), v=parseFloat(inp.value); if (isNaN(v)||v<0) return;
-  const cur=getScreenDay(today()); state.screen[today()]={total:v,yt:cur.yt}; inp.value=''; save(); render();
-}
-
-function logYouTube() {
-  const inp=document.getElementById('sc-yt-input'), v=parseFloat(inp.value); if (isNaN(v)||v<0) return;
-  const cur=getScreenDay(today()); state.screen[today()]={total:cur.total,yt:v}; inp.value=''; save(); render();
-}
-
-
-// ── 7. WORKOUT HEATMAP ────────────────────────────────────────────────
-
-function renderHeatmap(td) {
-  const days28 = Array.from({length:28},(_,i)=>new Date(Date.now()-(27-i)*DAY_MS).toISOString().slice(0,10));
-  const rem    = days28.length % 7;
-  const pad    = Array.from({length: rem ? 7-rem : 0}, ()=>null);
-  document.getElementById('heatmap-grid').innerHTML = [...days28,...pad].map(d => {
-    if (!d) return `<div class="hcell future"></div>`;
-    const v=state.workouts[d]||0, cls=v===0?'s0':v===1?'s2':v>=2?'s4':'s1';
-    return `<div class="hcell ${cls}" title="${d}: ${v} session(s)" onclick="logWorkoutDay('${d}')"
-      style="${d===td?'outline:2px solid var(--g);outline-offset:1px':''}"></div>`;
-  }).join('');
-}
-
-function logWorkoutDay(d) { state.workouts[d]=((state.workouts[d]||0)+1)%4; save(); render(); }
-
-
-// ── 8. OVERVIEW METRICS ───────────────────────────────────────────────
 
 function renderMetrics(td) {
-  const streaks = state.habits.map(h=>calcStreak(h.log,td));
-  document.getElementById('streak-val').textContent = streaks.length ? Math.max(...streaks) : 0;
-  const weekStart = new Date(); weekStart.setDate(weekStart.getDate()-weekStart.getDay());
-  let wCount=0;
-  for (let i=0;i<7;i++) {
-    const d=new Date(weekStart); d.setDate(d.getDate()+i);
-    if ((state.workouts[d.toISOString().slice(0,10)]||0)>0) wCount++;
-  }
+  const allStreaks = state.habits.map(h=>calcStreak(h.log,td));
+  document.getElementById('streak-val').textContent = allStreaks.length ? Math.max(...allStreaks) : 0;
+  const mon = new Date(); mon.setDate(mon.getDate()-mon.getDay());
+  let wCount = 0;
+  for (let i=0;i<7;i++) { const d=new Date(mon); d.setDate(d.getDate()+i); wCount+=(state.workouts[d.toISOString().slice(0,10)]||0)>0?1:0; }
   document.getElementById('workout-val').textContent = wCount;
-  document.getElementById('workout-card').className = 'mc'+(wCount>=4?' good':wCount>=2?'':' warn');
+  document.getElementById('workout-card').className = 'metric-card'+(wCount>=4?' good':wCount>=2?'':' warn');
 }
-
-
-// ── 9. MUSCLE DIAGRAM + INTENSITY COLOURING ──────────────────────────
-
-/*
-  Maps each movement to its primary muscle key so we can count sets per muscle.
-  When a session is logged, session.movement → muscleKey → set count.
-*/
-const MOVEMENT_TO_MUSCLE = {
-  'Incline DB press':'chest','Flat DB press':'chest','Dips':'chest','DB Floor Press':'chest','Tricep Push-ups':'chest',
-  'DB Overhead Press':'shoulders','DB Front Raise':'shoulders','DB Lateral Raise':'shoulders',
-  'DB face pull':'reardelts','DB chest-supported row':'reardelts',
-  'Pull-ups':'lats','Chin-ups':'lats','DB row (single arm)':'lats','Inverted row':'lats',
-  'DB hammer curl':'biceps','DB incline bicep curl':'biceps','DB Zottman curl':'biceps',
-  'DB Skull Crusher':'triceps','DB Overhead Tricep Extension':'triceps',
-  'Hanging Knee Raise':'abs','Hanging Leg Raise':'abs','V-ups':'abs','DB Russian Twist':'abs',
-  'Plank':'abs','Ab wheel rollout':'abs','Hollow body hold':'abs',
-  'DB Romanian Deadlift':'hamstrings','Nordic curl':'hamstrings',
-  'DB Bulgarian split squat':'glutes','DB Explosive Split Squat':'glutes','Step-ups':'glutes',
-  'Pistol Squat':'quads','DB Goblet squat':'quads',
-  'DB / One Leg Calf Raise':'calves',
-  'Jefferson curl':'lowerback',
-};
-
-/*
-  intensityColor(sets) — maps total sets in the last 7 days to a colour.
-  0 → neutral grey (untrained)
-  1-2 → blue (light)
-  3-7 → amber (moderate)
-  8+ → red (high volume)
-  This is just an if/else chain — pick the bracket, return the hex.
-*/
-function intensityColor(sets) {
-  if (sets === 0) return '#a0aec0';
-  if (sets <= 2)  return '#60a5fa';
-  if (sets <= 5)  return '#f59e0b';
-  return '#ef4444';
-}
-
-/*
-  applyIntensityColors()
-  1. Filter sessions to last 7 days.
-  2. Sum sets per muscle key.
-  3. For each key, find its SVG element IDs, find the shape inside each <g>,
-     and call setAttribute('fill', color) to paint it.
-  Why setAttribute? Because each muscle has a DIFFERENT colour — we can't
-  express "muscle X gets colour Y" with a CSS class alone. We need per-element
-  values, which means reaching into the DOM and setting the fill directly.
-  CSS .highlight still wins because it uses !important.
-*/
-function applyIntensityColors() {
-  const cutoff = new Date(Date.now() - 7 * DAY_MS).toISOString().slice(0, 10);
-  const setsByMuscle = {};
-  getSessions()
-    .filter(s => s.date >= cutoff)
-    .forEach(s => {
-      const key = MOVEMENT_TO_MUSCLE[s.movement];
-      if (key) setsByMuscle[key] = (setsByMuscle[key] || 0) + s.sets.length;
-    });
-
-  Object.entries(MUSCLE_MAP).forEach(([key, info]) => {
-    const color = intensityColor(setsByMuscle[key] || 0);
-    info.ids.forEach(id => {
-      const el = document.getElementById(id); if (!el) return;
-      // The <g> tag groups elements but has no fill itself.
-      // querySelector('[fill]') finds the first child with a fill attribute (the actual shape).
-      const shape = el.querySelector('[fill]');
-      if (shape) shape.setAttribute('fill', color);
-    });
-  });
-}
-
-/*
-  selectMuscle(key) — called by onclick on each SVG part.
-  Adds .highlight to matching IDs (green, !important overrides intensity colour),
-  .dim to everything else (low opacity fade).
-  Then updates the info panel with exercise badges.
-*/
-function selectMuscle(key) {
-  const info = MUSCLE_MAP[key]; if (!info) return;
-  document.querySelectorAll('.mpart').forEach(el => {
-    el.classList.remove('highlight', 'dim');
-    el.classList.add(info.ids.includes(el.id) ? 'highlight' : 'dim');
-  });
-  document.getElementById('muscle-info').innerHTML = `
-    <div class="mi-name">${info.label}</div>
-    <div style="margin-top:6px">${info.moves.map(m =>
-      `<span class="badge" style="margin-right:4px;margin-bottom:4px;display:inline-block;cursor:pointer"
-             onclick="prefillMovement('${m}')">${m}</span>`
-    ).join('')}</div>`;
-}
-
-// Clicking a badge pre-fills the logger and scrolls to it
-function prefillMovement(movement) {
-  for (const [group, moves] of Object.entries(MOVEMENTS)) {
-    if (moves.includes(movement)) {
-      document.getElementById('muscle-select').value = group;
-      onMuscleGroupChange();
-      document.getElementById('movement-select').value = movement;
-      document.getElementById('muscle-select').scrollIntoView({ behavior:'smooth', block:'center' });
-      return;
-    }
-  }
-}
-
-
-// ── 10. EXERCISE LOGGER ───────────────────────────────────────────────
-
-function onMuscleGroupChange() {
-  const g=document.getElementById('muscle-select').value;
-  const sel=document.getElementById('movement-select');
-  sel.innerHTML='<option value="">— select movement —</option>';
-  if (!g) return;
-  MOVEMENTS[g].forEach(m => { const o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); });
-  document.getElementById('sets-container').innerHTML='';
-  document.getElementById('sets-input').value='';
-}
-
-function buildSetRows() {
-  const n=parseInt(document.getElementById('sets-input').value);
-  const c=document.getElementById('sets-container'); c.innerHTML='';
-  if (isNaN(n)||n<1) return;
-  for (let i=1;i<=n;i++) {
-    const row=document.createElement('div'); row.className='set-row';
-    row.innerHTML=`<span class="set-lbl">Set ${i}</span>
-      <input type="number" class="reps-input ainp" placeholder="reps" min="1" style="flex:1"/>
-      <input type="text" class="weight-input ainp" placeholder="weight / BW" style="flex:1.5"/>`;
-    c.appendChild(row);
-  }
-}
-
-function logExercise() {
-  const mg=document.getElementById('muscle-select').value;
-  const mv=document.getElementById('movement-select').value;
-  const notes=document.getElementById('session-notes').value.trim();
-  if (!mg||!mv) { alert('Select a muscle group and movement.'); return; }
-  const repsEls=document.querySelectorAll('.reps-input');
-  if (!repsEls.length) { alert('Enter number of sets.'); return; }
-  const sets=Array.from(repsEls).map((el,i)=>({ reps:parseInt(el.value)||0, weight:document.querySelectorAll('.weight-input')[i].value||'BW' }));
-  const sessions=getSessions();
-  sessions.push({ date:today(), muscleGroup:mg, movement:mv, sets, notes, ts:Date.now() });
-  saveSessions(sessions);
-  state.workouts[today()]=(state.workouts[today()]||0)+1; save(); render();
-  // Reset form
-  document.getElementById('muscle-select').value='';
-  document.getElementById('movement-select').innerHTML='<option value="">— select muscle group first —</option>';
-  document.getElementById('sets-input').value='';
-  document.getElementById('sets-container').innerHTML='';
-  document.getElementById('session-notes').value='';
-  renderSessionLog(); populateChartDropdown(); applyIntensityColors();
-  alert(`Logged: ${mv} — ${sets.length} set${sets.length>1?'s':''}`);
-}
-
-
-// ── 11. SESSION LOG ───────────────────────────────────────────────────
-
-let sessionLogExpanded = false;
-
-function toggleSessionLog() {
-  sessionLogExpanded = !sessionLogExpanded;
-  document.getElementById('session-expand-btn').textContent = sessionLogExpanded ? 'Collapse' : 'Show all';
-  renderSessionLog();
-}
-
-function renderSessionLog() {
-  const sessions = getSessions();
-  const el = document.getElementById('session-log-list');
-  document.getElementById('session-count').textContent = sessions.length ? `${sessions.length} total` : '';
-  if (!sessions.length) { el.innerHTML = '<p class="empty-state">No sessions logged yet.</p>'; return; }
-  const reversed = sessions.slice().reverse();
-  const visible  = sessionLogExpanded ? reversed : reversed.slice(0, 5);
-  el.innerHTML = visible.map((s, reversedIdx) => {
-    const originalIdx = sessions.length - 1 - reversedIdx;
-    const setsStr  = s.sets.map(st => `${st.reps}r @ ${st.weight}`).join(' · ');
-    const totalReps = s.sets.reduce((a, b) => a + b.reps, 0);
-    const gc = GROUP_COLORS[s.muscleGroup] || '#f5f5f4', gt = GROUP_TEXT[s.muscleGroup] || 'var(--text2)';
-    return `<div class="sess-item">
-      <div class="sess-head">
-        <span class="sess-title">${s.movement}</span>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span class="sess-date">${fmt(s.date)}</span>
-          <button class="delbtn" onclick="deleteSession(${originalIdx})">x</button>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
-        <span style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:4px;background:${gc};color:${gt}">${s.muscleGroup}</span>
-        <span class="sess-detail">${s.sets.length} sets · ${totalReps} total reps</span>
-      </div>
-      <div class="sess-detail" style="color:var(--text3)">${setsStr}</div>
-      ${s.notes ? `<div class="sess-detail" style="font-style:italic;margin-top:2px">${s.notes}</div>` : ''}
-    </div>`;
-  }).join('');
-  if (!sessionLogExpanded && sessions.length > 5) {
-    el.innerHTML += `<p style="font-size:11px;color:var(--text3);text-align:center;padding-top:6px">Showing 5 of ${sessions.length} — click "Show all" to expand</p>`;
-  }
-}
-function deleteSession(originalIdx) {
-  const sessions=getSessions(); sessions.splice(originalIdx,1); saveSessions(sessions);
-  renderSessionLog(); populateChartDropdown(); applyIntensityColors();
-}
-
-
-// ── 12. PROGRESS CHART ────────────────────────────────────────────────
-
-let chartInstance=null;
-
-function populateChartDropdown() {
-  const sessions=getSessions(), movements=[...new Set(sessions.map(s=>s.movement))];
-  const sel=document.getElementById('chart-movement-select'), cur=sel.value;
-  sel.innerHTML='<option value="">— select movement —</option>';
-  movements.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); });
-  if (cur && movements.includes(cur)) sel.value=cur;
-}
-
-function renderChart(mv) {
-  const canvas=document.getElementById('progress-chart'), noData=document.getElementById('no-data-msg'), hint=document.getElementById('chart-hint');
-  if (!mv) { canvas.style.display='none'; noData.style.display='none'; hint.style.display='block'; return; }
-  const sessions=getSessions().filter(s=>s.movement===mv);
-  hint.style.display='none';
-  if (!sessions.length) { canvas.style.display='none'; noData.style.display='block'; return; }
-  canvas.style.display='block'; noData.style.display='none';
-  const isDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
-  const gc=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.06)';
-  if (chartInstance) chartInstance.destroy();
-  chartInstance=new Chart(canvas.getContext('2d'),{
-    type:'line',
-    data:{ labels:sessions.map(s=>fmt(s.date)), datasets:[{ label:'Total reps', data:sessions.map(s=>s.sets.reduce((a,b)=>a+b.reps,0)), borderColor:'#1D9E75', backgroundColor:'rgba(29,158,117,0.1)', tension:0.3, pointRadius:5, pointBackgroundColor:'#1D9E75' }] },
-    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:false,title:{display:true,text:'Total reps'},grid:{color:gc},ticks:{color:'var(--text2)'}}, x:{grid:{color:gc},ticks:{color:'var(--text2)'}} } }
-  });
-}
-
-
-// ── 13. NUTRITION ─────────────────────────────────────────────────────
-
-let calChartInstance=null;
-
-const openMealModal  = () => { document.getElementById('meal-modal').classList.add('open'); document.getElementById('m-name').focus(); };
-const closeMealModal = () => document.getElementById('meal-modal').classList.remove('open');
-document.getElementById('meal-modal').addEventListener('click', e => { if (e.target===e.currentTarget) closeMealModal(); });
-
-function addMeal() {
-  const name=document.getElementById('m-name').value.trim(); if (!name) { alert('Enter a name.'); return; }
-  const cal=parseFloat(document.getElementById('m-cal').value)||0;
-  const pro=parseFloat(document.getElementById('m-pro').value)||0;
-  const carb=parseFloat(document.getElementById('m-carb').value)||0;
-  const fat=parseFloat(document.getElementById('m-fat').value)||0;
-  const td=today(); if (!state.nutrition.meals[td]) state.nutrition.meals[td]=[];
-  state.nutrition.meals[td].push({name,cal,pro,carb,fat,ts:Date.now()});
-  save(); closeMealModal(); ['m-name','m-cal','m-pro','m-carb','m-fat'].forEach(id=>{document.getElementById(id).value='';});
-  renderNutrition();
-}
-
-function deleteMeal(idx) { state.nutrition.meals[today()].splice(idx,1); save(); renderNutrition(); }
-
-function saveTargets() {
-  state.nutrition.targets={ cal:parseFloat(document.getElementById('t-cal').value)||2400, pro:parseFloat(document.getElementById('t-pro').value)||180, carb:parseFloat(document.getElementById('t-carb').value)||220, fat:parseFloat(document.getElementById('t-fat').value)||70 };
-  save(); renderNutrition();
-}
-
-function renderNutrition() {
-  const td=today(), meals=state.nutrition.meals[td]||[], targets=state.nutrition.targets;
-  document.getElementById('t-cal').value=targets.cal||''; document.getElementById('t-pro').value=targets.pro||'';
-  document.getElementById('t-carb').value=targets.carb||''; document.getElementById('t-fat').value=targets.fat||'';
-  const totals=meals.reduce((a,m)=>({cal:a.cal+m.cal,pro:a.pro+m.pro,carb:a.carb+m.carb,fat:a.fat+m.fat}),{cal:0,pro:0,carb:0,fat:0});
-  const setM=(vid,bid,val,tgt,color)=>{ document.getElementById(vid).textContent=Math.round(val); document.getElementById(bid).style.width=Math.min(100,(val/tgt)*100)+'%'; document.getElementById(bid).style.background=val>=tgt?'var(--g)':color; };
-  setM('mac-cal','mbar-cal',totals.cal,targets.cal||2400,'var(--am)'); setM('mac-pro','mbar-pro',totals.pro,targets.pro||180,'var(--g)');
-  setM('mac-carb','mbar-carb',totals.carb,targets.carb||220,'#378ADD'); setM('mac-fat','mbar-fat',totals.fat,targets.fat||70,'#D4537E');
-  document.getElementById('mac-cal-t').textContent=`target: ${targets.cal||2400}`;
-  document.getElementById('mac-pro-t').textContent=`target: ${targets.pro||180}g`;
-  document.getElementById('meal-list').innerHTML=meals.length
-    ? meals.map((m,i)=>`<div class="meal-row"><div><div class="meal-name">${m.name}</div><div class="meal-macros">${m.pro}g P · ${m.carb}g C · ${m.fat}g F</div></div><div style="display:flex;align-items:center;gap:8px"><div class="meal-cals">${m.cal} cal</div><button class="delbtn" onclick="deleteMeal(${i})">✕</button></div></div>`).join('')
-    : '<p class="empty-state">No meals logged today.</p>';
-  const days7=Array.from({length:7},(_,i)=>new Date(Date.now()-(6-i)*DAY_MS).toISOString().slice(0,10));
-  const isDark=window.matchMedia('(prefers-color-scheme:dark)').matches, gc=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.06)';
-  if (calChartInstance) calChartInstance.destroy();
-  calChartInstance=new Chart(document.getElementById('cal-chart').getContext('2d'),{
-    type:'bar', data:{labels:days7.map(d=>fmt(d)),datasets:[{label:'Calories',data:days7.map(d=>(state.nutrition.meals[d]||[]).reduce((a,m)=>a+m.cal,0)),backgroundColor:'rgba(29,158,117,0.7)',borderRadius:4}]},
-    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:gc},ticks:{color:'var(--text2)'}},x:{grid:{display:false},ticks:{color:'var(--text2)'}}}}
-  });
-}
-
-// ── 15. TUTORING ──────────────────────────────────────────────────────
-
-const getClients  = ()    => JSON.parse(localStorage.getItem('tutor-clients') || '[]');
-const saveClients = arr   => localStorage.setItem('tutor-clients', JSON.stringify(arr));
-let tutorEditingId = null;
-let tutorSessionClientId = null;
-
-function renderTutoring() {
-  const clients = getClients();
-  const totalOwed = c => c.sessions.reduce((s, sess) => s + (sess.duration / 60) * c.rate, 0);
-  const unpaid = clients.filter(c => !c.paid);
-  const collected = clients.filter(c => c.paid).reduce((s, c) => s + totalOwed(c), 0);
-  const pending   = unpaid.reduce((s, c) => s + totalOwed(c), 0);
-  document.getElementById('tutor-metrics').innerHTML = `
-    <div class="mc"><div class="lbl">Total clients</div><div class="val">${clients.length}</div></div>
-    <div class="mc warn"><div class="lbl">Awaiting payment</div><div class="val">${unpaid.length}</div></div>
-    <div class="mc good"><div class="lbl">Collected</div><div class="val">$${collected.toFixed(0)}</div></div>
-    <div class="mc warn"><div class="lbl">Pending</div><div class="val">$${pending.toFixed(0)}</div></div>`;
-  const grid = document.getElementById('tutor-grid');
-  if (!clients.length) { grid.innerHTML = '<p class="empty-state">No clients yet. Add one above.</p>'; return; }
-  grid.innerHTML = clients.map(c => {
-    const initials = c.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-    const owed = totalOwed(c);
-    const lastSess = c.sessions.length ? c.sessions[c.sessions.length - 1].date : null;
-    const sessHTML = c.sessions.length
-      ? c.sessions.slice(-3).reverse().map(s =>
-          `<div class="client-session-row"><span>${s.date}</span><span>${s.duration} min — $${((s.duration/60)*c.rate).toFixed(0)}</span></div>`
-        ).join('') : '<div style="color:var(--text3);font-size:11px">No sessions yet</div>';
-    return `<div class="client-card ${c.paid ? 'paid' : 'unpaid'}">
-      <div class="client-head">
-        <div class="client-avatar">${initials}</div>
-        <div style="flex:1;min-width:0">
-          <p class="client-name">${c.name}</p>
-          <p class="client-sub">${c.subject} · $${c.rate}/hr</p>
-        </div>
-        <span class="cpaid-badge ${c.paid ? 'paid' : 'unpaid'}">${c.paid ? 'Paid' : 'Unpaid'}</span>
-      </div>
-      ${(()=>{
-        const ob = c.onboarding || {};
-        const steps = [
-          { key:'intro', label:'Introductory session' },
-          { key:'diag',  label:'Diagnostic test' },
-          { key:'math',  label:'Math fundamentals' },
-          { key:'gram',  label:'Grammar eval' },
-          { key:'prac',  label:'Practice & spot-check' },
-        ];
-        const nextStep = steps.find(s => !ob[s.key]);
-        const stepsHTML = steps.map(s =>
-          `<div class="ob-step ${ob[s.key] ? 'done' : ''}">
-            <div class="ob-step-dot ${ob[s.key] ? 'done' : ''}">${ob[s.key] ? '✓' : ''}</div>
-            ${s.label}
-          </div>`
-        ).join('');
-        const nextHTML = nextStep
-          ? `<div class="ob-next">→ Next: ${nextStep.label}</div>`
-          : `<div class="ob-next" style="color:var(--g)">✓ Onboarding complete</div>`;
-        return `<div class="ob-steps">${stepsHTML}</div>${nextHTML}`;
-      })()}
-      ${(()=>{
-        const math = c.satMath, rw = c.satRW;
-        if (!math && !rw) return '';
-        const scoreColor = v => !v ? '' : v >= 650 ? 'high' : v >= 500 ? 'mid' : 'low';
-        const total = (math||0) + (rw||0);
-        return `<div class="sat-scores">
-          <div class="sat-score-box"><p class="sat-score-label">Math</p><p class="sat-score-val ${scoreColor(math)}">${math || '—'}</p></div>
-          <div class="sat-score-box"><p class="sat-score-label">Reading & Writing</p><p class="sat-score-val ${scoreColor(rw)}">${rw || '—'}</p></div>
-        </div>
-        ${math && rw ? `<div class="sat-total">Total: <strong style="color:var(--text)">${total}</strong> / 1600</div>` : ''}`;
-      })()}
-      <div class="client-meta">
-        <span>${lastSess ? 'Last: ' + fmt(lastSess) : 'No sessions'}</span>
-        <span>Total owed: <strong style="color:var(--text)">$${owed.toFixed(0)}</strong></span>
-      </div>
-      ${c.notes ? `<div class="client-note">${c.notes}</div>` : ''}
-      <div class="client-sessions">${sessHTML}</div>
-      <div class="client-actions">
-        <button class="abtn" onclick="openTutorSessionModal(${c.id})">+ Session</button>
-        <button class="abtn" onclick="toggleTutorPaid(${c.id})">${c.paid ? 'Mark unpaid' : 'Mark paid'}</button>
-        <button class="abtn" onclick="openTutorEditModal(${c.id})">Edit</button>
-        <button class="delbtn" onclick="deleteTutorClient(${c.id})">✕</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-function updateSatTotal() {
-  const m = parseInt(document.getElementById('tc-sat-math').value) || 0;
-  const r = parseInt(document.getElementById('tc-sat-rw').value)   || 0;
-  document.getElementById('tc-sat-total').value = (m && r) ? m + r : '';
-}
-function openTutorModal() {
-  tutorEditingId = null;
-  document.getElementById('tutor-modal-title').textContent = 'New client';
- ['tc-name','tc-subject','tc-notes','tc-sat-total', 'tc-sat-math','tc-sat-rw'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('tc-rate').value = 50;
-  ['ob-intro','ob-diag','ob-math','ob-gram','ob-prac'].forEach(id => document.getElementById(id).checked = false);
-  document.getElementById('tutor-client-modal').classList.add('open');
-}
-function openTutorEditModal(id) {
-  const c = getClients().find(c => c.id === id); if (!c) return;
-  tutorEditingId = id;
-  document.getElementById('tutor-modal-title').textContent = 'Edit client';
-  document.getElementById('tc-name').value    = c.name;
-  document.getElementById('tc-subject').value = c.subject;
-  document.getElementById('tc-rate').value    = c.rate;
-  document.getElementById('tc-notes').value   = c.notes || '';
-  document.getElementById('tc-sat-total').value = c.satTotal || '';
-  document.getElementById('tc-sat-math').value = c.satMath || '';
-  document.getElementById('tc-sat-rw').value   = c.satRW   || '';
-  const ob = c.onboarding || {};
-  document.getElementById('ob-intro').checked = !!ob.intro;
-  document.getElementById('ob-diag').checked  = !!ob.diag;
-  document.getElementById('ob-math').checked  = !!ob.math;
-  document.getElementById('ob-gram').checked  = !!ob.gram;
-  document.getElementById('ob-prac').checked  = !!ob.prac;
-  document.getElementById('tutor-client-modal').classList.add('open');
-}
-function closeTutorModal() { document.getElementById('tutor-client-modal').classList.remove('open'); }
-
-function saveTutorClient() {
-  const name = document.getElementById('tc-name').value.trim(); if (!name) return;
-  const subject = document.getElementById('tc-subject').value.trim();
-  const rate    = parseFloat(document.getElementById('tc-rate').value) || 0;
-  const notes   = document.getElementById('tc-notes').value.trim();
-  const satTotal = parseInt(document.getElementById('tc-sat-total').value) || null;
-  const satMath = parseInt(document.getElementById('tc-sat-math').value) || null;
-  const satRW   = parseInt(document.getElementById('tc-sat-rw').value)   || null;
-  const onboarding = {
-    intro: document.getElementById('ob-intro').checked,
-    diag:  document.getElementById('ob-diag').checked,
-    math:  document.getElementById('ob-math').checked,
-    gram:  document.getElementById('ob-gram').checked,
-    prac:  document.getElementById('ob-prac').checked,
-  };
-  let clients = getClients();
-  if (tutorEditingId) {
-    const c = clients.find(c => c.id === tutorEditingId);
-    if (c) Object.assign(c, { name, subject, rate, notes, onboarding });
-  } else {
-    clients.push({ id: Date.now(), name, subject, rate, notes, onboarding, sessions: [], paid: false });
-  }
-  saveClients(clients); closeTutorModal(); renderTutoring();
-}
-
-function openTutorSessionModal(id) {
-  tutorSessionClientId = id;
-  document.getElementById('ts-date').value = today();
-  document.getElementById('ts-dur').value  = 60;
-  document.getElementById('tutor-session-modal').classList.add('open');
-}
-function closeTutorSessionModal() { document.getElementById('tutor-session-modal').classList.remove('open'); }
-
-function saveTutorSession() {
-  const date = document.getElementById('ts-date').value;
-  const duration = parseInt(document.getElementById('ts-dur').value) || 60;
-  const clients = getClients();
-  const c = clients.find(c => c.id === tutorSessionClientId);
-  if (c) { c.sessions.push({ date, duration }); saveClients(clients); }
-  closeTutorSessionModal(); renderTutoring();
-}
-
-function toggleTutorPaid(id) {
-  const clients = getClients();
-  const c = clients.find(c => c.id === id);
-  if (c) { c.paid = !c.paid; saveClients(clients); renderTutoring(); }
-}
-
-function deleteTutorClient(id) {
-  saveClients(getClients().filter(c => c.id !== id)); renderTutoring();
-}
-
-document.getElementById('tutor-client-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeTutorModal(); });
-document.getElementById('tutor-session-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeTutorSessionModal(); });
-
- // ── NOTES ─────────────────────────────────────────────────────────────
-
-const NOTE_KEYS = { fitness:'lifeos-note-fitness', nutrition:'lifeos-note-nutrition', tutoring:'lifeos-note-tutoring', appeal:'lifeos-note-appeal' };
-let noteTimers = {};
-
-function saveNote(tab) {
-  const ta = document.getElementById('notes-' + tab); if (!ta) return;
-  localStorage.setItem(NOTE_KEYS[tab], ta.value);
-  const hint = document.getElementById('notes-' + tab + '-hint');
-  if (hint) { hint.textContent = 'Saved'; clearTimeout(noteTimers[tab]); noteTimers[tab] = setTimeout(() => { hint.textContent = ''; }, 1500); }
-}
-
-function loadNote(tab) {
-  const ta = document.getElementById('notes-' + tab); if (!ta) return;
-  ta.value = localStorage.getItem(NOTE_KEYS[tab]) || '';
-}    
- // ── APPEAL TAB ────────────────────────────────────────────────────────
-
-const getAppealState = () => JSON.parse(localStorage.getItem('appeal-state') || 'null') || {
-  items: [
-    'Mewing + Buteyko Breathing method',
-    'MPR + Chin Tucks',
-    'UUDD',
-    'Sunscreen + Moisturizer',
-    'Coconut Oil + Brush Teeth 2x'
-  ],
-  log: {}   // "YYYY-MM-DD" -> { checked: [indices of completed items] }
-};
-const saveAppealState = s => localStorage.setItem('appeal-state', JSON.stringify(s));
-
-function renderAppeal() {
-  const s = getAppealState();
-  const td = today();
-  document.getElementById('appeal-date').textContent =
-    new Date().toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
-
-  const todayLog = s.log[td] || { checked: [] };
-
-  // Checklist
-  document.getElementById('appeal-checks').innerHTML = s.items.map((item, i) => {
-    const done = todayLog.checked.includes(i);
-    return `<div class="appeal-check-row">
-      <input type="checkbox" ${done ? 'checked' : ''} onchange="toggleAppealItem(${i}, this.checked)"/>
-      <span class="appeal-check-label" style="${done ? 'text-decoration:line-through;color:var(--text3)' : ''}">${item}</span>
-      <button class="delbtn" onclick="deleteAppealItem(${i})">x</button>
-    </div>`;
-  }).join('');
-
-  // 28-day grid
-  const grid = document.getElementById('appeal-streak-grid');
-  let totalDone = 0, totalDays = 0;
-  grid.innerHTML = Array.from({ length: 28 }, (_, i) => {
-    const d = new Date(Date.now() - (27 - i) * DAY_MS).toISOString().slice(0, 10);
-    const isFuture = d > td;
-    if (isFuture) return `<div class="appeal-day future"></div>`;
-    totalDays++;
-    const log = s.log[d] || { checked: [] };
-    const pct = s.items.length ? log.checked.length / s.items.length : 0;
-    const count = log.checked.length;
-    const fillPct = s.items.length ? Math.round((count / s.items.length) * 100) : 0;
-    const fillColor = count >= 5 ? '#5DCAA5' : count >= 3 ? '#EF9F27' : count > 0 ? '#E05555' : 'transparent';
-    if (pct === 1) totalDone++;
-    else if (pct > 0) totalDone += pct;
-    return `<div class="appeal-day none" title="${d}: ${count}/${s.items.length}" style="position:relative;overflow:hidden;">
-      <div style="position:absolute;bottom:0;left:0;right:0;height:${fillPct}%;background:${fillColor};transition:height .2s;"></div>
-      <span style="position:relative;z-index:1;font-size:9px;color:${count > 0 ? '#fff' : 'var(--text3)'};">${count > 0 ? count : ''}</span>
-        </div>`;
-  }).join('');
-  const pct = totalDays ? Math.round((totalDone / totalDays) * 100) : 0;
-  document.getElementById('appeal-pct').textContent = totalDays ? `${pct}% avg` : '';
-}
-
-function toggleAppealItem(idx, checked) {
-  const s = getAppealState();
-  const td = today();
-  if (!s.log[td]) s.log[td] = { checked: [] };
-  if (checked) { if (!s.log[td].checked.includes(idx)) s.log[td].checked.push(idx); }
-  else { s.log[td].checked = s.log[td].checked.filter(i => i !== idx); }
-  saveAppealState(s); renderAppeal();
-}
-
-function addAppealItem() {
-  const inp = document.getElementById('appeal-new-item');
-  const val = inp.value.trim(); if (!val) return;
-  const s = getAppealState();
-  s.items.push(val);
-  saveAppealState(s); inp.value = ''; renderAppeal();
-}
-
-function deleteAppealItem(idx) {
-  const s = getAppealState();
-  s.items.splice(idx, 1);
-  // Remap all logs to remove the deleted index
-  Object.keys(s.log).forEach(d => {
-    s.log[d].checked = s.log[d].checked
-      .filter(i => i !== idx)
-      .map(i => i > idx ? i - 1 : i);
-  });
-  saveAppealState(s); renderAppeal();
-}
-     // ── 14. INIT ──────────────────────────────────────────────────────────
 
 render();
-populateChartDropdown();
+setSyncStatus('off');
 
+// --- MOVEMENTS ---
+const MOVEMENTS = {
+  push: ["Incline DB press","Dips","DB Skull Crusher","DB Overhead Tricep Extension","Tricep Push-ups","DB Front Raise","DB Lateral Raise","DB Overhead Press"],
+  pull: ["Pull-ups","Chin-ups","DB row (single arm)","DB chest-supported row","DB face pull","DB hammer curl","DB incline bicep curl"],
+  core: ["Hanging Knee Raise","V-ups","DB Russian Twist"],
+  lower: ["DB Romanian Deadlift","Pistol Squat","DB Explosive Split Squat","DB / One Leg Calf Raise"],
+  flexibility: ["Head Through Knees","Split","Chest to Floor"]
+}
+
+// --- TAB SWITCHER ---
+function showTab(t) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'))
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'))
+  document.querySelector(`.tab[onclick="showTab('${t}')"]`).classList.add('active')
+  document.getElementById('pane-'+t).classList.add('active')
+}
+
+// --- WORKOUT LOGGER ---
+const muscleSelect = document.getElementById('muscle-select')
+const movementSelect = document.getElementById('movement-select')
+const setsInput = document.getElementById('sets-input')
+const setsContainer = document.getElementById('sets-container')
+const logBtn = document.getElementById('log-btn')
+
+muscleSelect.addEventListener('change', function() {
+  const selectedGroup = muscleSelect.value
+  movementSelect.innerHTML = ''
+  if (!selectedGroup) {
+    movementSelect.innerHTML = '<option>-- select muscle group first --</option>'
+    return
+  }
+  MOVEMENTS[selectedGroup].forEach(function(movement) {
+    const option = document.createElement('option')
+    option.value = movement
+    option.textContent = movement
+    movementSelect.appendChild(option)
+  })
+  setsContainer.innerHTML = ''
+  setsInput.value = ''
+})
+
+setsInput.addEventListener('change', function() {
+  const numSets = parseInt(setsInput.value)
+  setsContainer.innerHTML = ''
+  if (isNaN(numSets) || numSets < 1) return
+  for (let i = 1; i <= numSets; i++) {
+    const row = document.createElement('div')
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px'
+    row.innerHTML = `
+      <span style="font-size:12px;color:var(--color-text-secondary);min-width:40px">Set ${i}</span>
+      <input type="number" class="reps-input add-input" placeholder="reps" min="1" style="flex:1"/>
+      <input type="text" class="weight-input add-input" placeholder="weight or BW" style="flex:1.5"/>
+    `
+    setsContainer.appendChild(row)
+  }
+})
+
+logBtn.addEventListener('click', function() {
+  const muscleGroup = muscleSelect.value
+  const movement = movementSelect.value
+  if (!muscleGroup || !movement) { alert('Select a muscle group and movement first.'); return }
+  const repsInputs = document.querySelectorAll('.reps-input')
+  const weightInputs = document.querySelectorAll('.weight-input')
+  if (repsInputs.length === 0) { alert('Enter number of sets first.'); return }
+  const sets = []
+  for (let i = 0; i < repsInputs.length; i++) {
+    sets.push({
+      reps: parseInt(repsInputs[i].value) || 0,
+      weight: weightInputs[i].value === '' ? 'BW' : weightInputs[i].value
+    })
+  }
+  const session = {
+    date: new Date().toISOString().slice(0,10),
+    muscleGroup,
+    movement,
+    sets
+  }
+  workoutSessions.push(session)
+  save()
+
+  // reset form
+  muscleSelect.value = ''
+  movementSelect.innerHTML = '<option>-- select muscle group first --</option>'
+  setsInput.value = ''
+  setsContainer.innerHTML = ''
+
+  alert(`Logged: ${movement} — ${sets.length} sets`)
+  populateChartDropdown()
+})
+
+// --- CHART FUNCTIONS ---
+function getChartData(movementName) {
+  const filtered = workoutSessions.filter(session => session.movement === movementName)
+  const dataPoints = filtered.map(session => {
+    const totalReps = session.sets.reduce((sum, set) => sum + set.reps, 0)
+    return {
+      date: session.date,
+      reps: totalReps
+    }
+  })
+  return dataPoints
+}
+
+let chartInstance = null
+
+function renderChart(movementName) {
+  const dataPoints = getChartData(movementName)
+  const labels = dataPoints.map(point => point.date)
+  const data = dataPoints.map(point => point.reps)
+  const canvas = document.getElementById('progress-chart')
+  const noDataMsg = document.getElementById('no-data-msg')
+
+  if (dataPoints.length === 0) {
+    canvas.style.display = 'none'
+    noDataMsg.style.display = 'block'
+    return
+  }
+
+  canvas.style.display = 'block'
+  noDataMsg.style.display = 'none'
+
+  if (chartInstance) chartInstance.destroy()
+
+  const ctx = canvas.getContext('2d')
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: movementName,
+        data: data,
+        borderColor: '#1D9E75',
+        backgroundColor: 'rgba(29,158,117,0.1)',
+        tension: 0.3,
+        pointRadius: 5
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: false, title: { display: true, text: 'Total Reps' } },
+        x: { title: { display: true, text: 'Date' } }
+      }
+    }
+  })
+}
+
+function populateChartDropdown() {
+  const movements = [...new Set(workoutSessions.map(s => s.movement))]
+  const select = document.getElementById('chart-movement-select')
+  select.innerHTML = '<option value="">-- select movement --</option>'
+  movements.forEach(function(movement) {
+    const option = document.createElement('option')
+    option.value = movement
+    option.textContent = movement
+    select.appendChild(option)
+  })
+}
+
+document.getElementById('chart-movement-select').addEventListener('change', function() {
+  if (this.value) renderChart(this.value)
+})
+
+populateChartDropdown()
 </script>
 </body>
 </html>
