@@ -941,7 +941,9 @@ function handleAuthClick() {
     auth.signInWithRedirect(provider);
   }
 }
-auth.getRedirectResult().catch(err => { if (err && err.code) alert('Sign-in failed: ' + err.message); });
+auth.getRedirectResult()
+  .then(result => alert('Redirect result: ' + (result && result.user ? result.user.email : 'no user')))
+  .catch(err => alert('Sign-in failed: ' + (err && err.message ? err.message : err)));
 
 auth.onAuthStateChanged(user => {
   const btn = document.getElementById('auth-btn');
