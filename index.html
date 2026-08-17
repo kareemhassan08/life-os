@@ -938,8 +938,8 @@ function handleAuthClick() {
   if (currentUid) auth.signOut();
   else {
     const provider = new firebase.auth.GoogleAuthProvider();
-auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
-  auth.signInWithRedirect(provider);
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
+         auth.signInWithRedirect(provider);
 });
   }
 }
