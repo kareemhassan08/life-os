@@ -935,10 +935,7 @@ function queueCloudSync() {
   }, 800);
 }
 
-google.accounts.id.initialize({
-  client_id: "650278523710-5l4j8thsc8gm2rj44udspnahp9bdliqd.apps.googleusercontent.com",
-  callback: handleGoogleCredential
-});
+let gsiReady = false;
 
 function handleGoogleCredential(response) {
   const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
@@ -946,8 +943,16 @@ function handleGoogleCredential(response) {
 }
 
 function handleAuthClick() {
-  if (currentUid) auth.signOut();
-  else google.accounts.id.prompt();
+  if (currentUid) { auth.signOut(); return; }
+  if (!gsiReady) {
+    google.accounts.id.initialize({
+      client_id: '650278523710-5l4j8thsc8gm2rj44udspnahp9bdliqd.apps.googleusercontent.com',
+      callback: handleGoogleCredential
+    });
+    gsiReady = true;
+  }
+  google.accounts.id.prompt();
+}
 }
 
 auth.onAuthStateChanged(user => {
