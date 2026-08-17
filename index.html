@@ -8,6 +8,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://accounts.google.com/gsi/client" async></script>
 
 <!-- =====================================================================
      STYLES — all visual rules live here, organised into labelled sections
@@ -934,18 +935,20 @@ function queueCloudSync() {
   }, 800);
 }
 
+google.accounts.id.initialize({
+  client_id: 650278523710-5l4j8thsc8gm2rj44udspnahp9bdliqd.apps.googleusercontent.com
+  callback: handleGoogleCredential
+});
+
+function handleGoogleCredential(response) {
+  const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
+  auth.signInWithCredential(credential).catch(err => alert('Sign-in failed: ' + err.message));
+}
+
 function handleAuthClick() {
   if (currentUid) auth.signOut();
-  else {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
-         auth.signInWithRedirect(provider);
-});
-  }
+  else google.accounts.id.prompt();
 }
-auth.getRedirectResult()
-  .then(result => alert('Redirect result: ' + (result && result.user ? result.user.email : 'no user')))
-  .catch(err => alert('Sign-in failed: ' + (err && err.message ? err.message : err)));
 
 auth.onAuthStateChanged(user => {
   const btn = document.getElementById('auth-btn');
