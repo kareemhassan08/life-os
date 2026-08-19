@@ -268,6 +268,32 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .appeal-day.partial { background: var(--am); color:#fff; }
 .appeal-day.none  { background: var(--bg); }
 .appeal-day.future { background: transparent; border:.5px solid var(--border); }
+
+/* ── 18. STICKY NOTE BOARD ─────────────────────────────────────────── */
+.sticky-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.sticky-legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; color: var(--text2); }
+.sticky-legend-item { display: flex; align-items: center; gap: 4px; }
+.sticky-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.sticky-new-btn { margin-left: auto; font-size: 12px; padding: 5px 12px; border-radius: var(--r); border: .5px solid var(--border2); background: transparent; color: var(--text); cursor: pointer; font-family: inherit; }
+.sticky-new-btn:hover { background: var(--bg); }
+.sticky-board { position: relative; width: 100%; height: 380px; overflow: hidden; border-radius: var(--r); background: var(--bg); }
+.sticky-note-free {
+  position: absolute; width: 148px; min-height: 84px; background: var(--bg2);
+  border-radius: 8px; padding: 8px 9px 22px; font-size: 12px; line-height: 1.35;
+  cursor: grab; user-select: none; touch-action: none; border: 1.5px solid transparent;
+  transition: box-shadow .2s;
+}
+.sticky-note-free.dragging { cursor: grabbing; z-index: 50; }
+.sticky-note-free .sn-title { font-weight: 600; font-size: 12px; margin-bottom: 3px; padding-right: 14px; word-break: break-word; }
+.sticky-note-free .sn-body-text { color: var(--text2); font-size: 11px; word-break: break-word; white-space: pre-wrap; }
+.sticky-note-free .sn-del { position: absolute; top: 4px; right: 6px; font-size: 11px; line-height: 1; cursor: pointer; opacity: .4; color: var(--text); }
+.sticky-note-free .sn-del:hover { opacity: 1; }
+.sticky-note-free .sn-cat-dot { position: absolute; bottom: 6px; right: 7px; width: 10px; height: 10px; border-radius: 50%; cursor: pointer; }
+.sticky-note-free input.sn-title-input, .sticky-note-free textarea.sn-body-input {
+  width: 100%; border: none; background: transparent; font-family: inherit; color: var(--text); outline: none; resize: none;
+}
+.sticky-note-free input.sn-title-input { font-weight: 600; font-size: 12px; margin-bottom: 4px; }
+.sticky-note-free textarea.sn-body-input { font-size: 11px; height: 44px; }
      
 </style>
 </head>
@@ -297,75 +323,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   <!-- HOME -->
   <div class="pane active" id="pane-home">
     <div class="slbl">Overview</div>
-    <div class="mrow">
-      <div class="mc good"><div class="lbl">Best habit streak</div><div class="val" id="streak-val">0</div><div class="sub">days running</div></div>
-      <div class="mc" id="workout-card"><div class="lbl">Workouts this week</div><div class="val" id="workout-val">0</div><div class="sub">target: 4</div></div>
-      <div class="mc" id="screen-card"><div class="lbl">Screen time today</div><div class="val" id="screen-val">—</div><div class="sub">self-reported hrs</div></div>
-      <div class="mc"><div class="lbl">Goals active</div><div class="val" id="goals-active-val">—</div><div class="sub">in progress</div></div>
-    </div>
 
-    <div class="twocol">
-      <div class="card">
-        <div class="ctitle">✓ Daily habits</div>
-        <div id="habit-list"></div>
-        <div class="adrow">
-          <input class="ainp" id="new-habit-input" placeholder="Add habit…" onkeydown="if(event.key==='Enter')addHabit()"/>
-          <button class="abtn" onclick="addHabit()">+</button>
-        </div>
+    <div class="card">
+      <div class="ctitle" style="margin-bottom:8px">
+        🗒️ Quick Notes
+        <button class="sticky-new-btn" onclick="createSticky()">+ New</button>
       </div>
-      <div class="card">
-        <div class="ctitle">🎯 Goals</div>
-        <div id="goals-list"></div>
-        <div class="adrow" style="flex-wrap:wrap">
-          <input class="ainp" id="new-goal-input" placeholder="Add goal…" style="flex:3;min-width:120px" onkeydown="if(event.key==='Enter')addGoal()"/>
-          <select class="ainp" id="new-goal-cat" style="flex:1;min-width:90px">
-            <option value="academic">Academic</option>
-            <option value="fitness">Fitness</option>
-            <option value="professional">Professional</option>
-            <option value="personal">Personal</option>
-          </select>
-          <button class="abtn" onclick="addGoal()">+</button>
-        </div>
+      <div class="sticky-toolbar">
+        <div class="sticky-legend" id="sticky-legend"></div>
       </div>
-    </div>
-
-    <div class="twocol">
-      <div class="card">
-        <div class="ctitle">📵 Screen time</div>
-        <div class="sbox">
-          <div class="sb"><div class="sv" id="sc-today">—</div><div class="sl">total today</div></div>
-          <div class="sb"><div class="sv" id="sc-yt">—</div><div class="sl">YouTube</div></div>
-          <div class="sb"><div class="sv" id="sc-avg">—</div><div class="sl">7-day avg</div></div>
-        </div>
-        <div id="sc-week-bars"></div>
-        <div class="adrow" style="margin-top:10px">
-          <input class="ainp" id="sc-input" type="number" min="0" max="16" step="0.5" placeholder="Total hrs today" onkeydown="if(event.key==='Enter')logScreen()"/>
-          <button class="abtn" onclick="logScreen()">Log total</button>
-        </div>
-        <div class="adrow">
-          <input class="ainp" id="sc-yt-input" type="number" min="0" max="16" step="0.5" placeholder="YouTube hrs today" onkeydown="if(event.key==='Enter')logYouTube()"/>
-          <button class="abtn" style="color:var(--rd);border-color:var(--rd)" onclick="logYouTube()">Log YT</button>
-        </div>
-        <p style="font-size:10px;color:var(--text3);margin-top:8px;line-height:1.5">
-          For auto YouTube tracking, see the note on the Fitness tab.
-        </p>
-      </div>
-      <div class="card">
-        <div class="ctitle">📅 Workout heatmap</div>
-        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text3);margin-bottom:5px">
-          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
-        </div>
-        <div class="hgrid" id="heatmap-grid"></div>
-        <div style="margin-top:9px;display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)">
-          <span>less</span>
-          <div style="width:9px;height:9px;border-radius:2px;background:var(--bg)"></div>
-          <div style="width:9px;height:9px;border-radius:2px;background:#9FE1CB"></div>
-          <div style="width:9px;height:9px;border-radius:2px;background:var(--g)"></div>
-          <div style="width:9px;height:9px;border-radius:2px;background:var(--gd)"></div>
-          <span>more</span>
-          <span style="margin-left:auto;cursor:pointer;color:var(--text2)" onclick="showTab('fitness')">+ log workout →</span>
-        </div>
-      </div>
+      <div class="sticky-board" id="sticky-board"></div>
     </div>
   </div>
 
@@ -892,6 +859,7 @@ let state = JSON.parse(localStorage.getItem('life_os_v2') || 'null') || {
     { id:4, title:'Consistent upper body program (8wks)', cat:'fitness',      status:'active'  }
   ],
   nutrition: { meals:{}, targets:{ cal:2400, pro:180, carb:220, fat:70 } },
+  stickies: [],
   nextId: 10
 };
 
@@ -1008,7 +976,305 @@ function render() {
   const td = today();
   document.getElementById('today-date').textContent =
     new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
-  renderHabits(td); renderGoals(); renderScreen(td); renderHeatmap(td); renderMetrics(td);
+  renderStickies();
+}
+
+
+// ── 3b. STICKY NOTE BOARD (freeform, draggable, drifting, glow) ────────
+const STICKY_CATEGORIES = [
+  {key:'school', label:'School', color:'#F5A524'},
+  {key:'research', label:'Research', color:'#1D9E75'},
+  {key:'personal', label:'Personal', color:'#3B82F6'},
+  {key:'fitness', label:'Fitness', color:'#EC4899'},
+  {key:'other', label:'Other', color:'#9CA3AF'}
+];
+const NOTE_W = 148, NOTE_H = 84;
+
+let stickyEls = {};      // id -> { el, vx, vy }
+let stickyAnimRunning = false;
+let stickyEditingId = null;
+let stickyDrag = null;   // { id, offsetX, offsetY }
+let stickyBoardHover = false;
+
+function catInfo(key) { return STICKY_CATEGORIES.find(c => c.key === key) || STICKY_CATEGORIES[STICKY_CATEGORIES.length-1]; }
+
+function renderStickyLegend() {
+  const el = document.getElementById('sticky-legend');
+  if (!el || el.dataset.built) return;
+  el.dataset.built = '1';
+  el.innerHTML = STICKY_CATEGORIES.map(c => `<div class="sticky-legend-item"><span class="sticky-legend-dot" style="background:${c.color}"></span>${c.label}</div>`).join('');
+}
+
+function migrateStickies() {
+  const board = document.getElementById('sticky-board');
+  const w = (board && board.clientWidth) || 600, h = (board && board.clientHeight) || 380;
+  state.stickies.forEach(s => {
+    if (s.title === undefined) s.title = '';
+    if (typeof s.x !== 'number') s.x = Math.random() * Math.max(1, w - NOTE_W);
+    if (typeof s.y !== 'number') s.y = Math.random() * Math.max(1, h - NOTE_H);
+    if (!s.cat) s.cat = 'other';
+  });
+}
+
+function createSticky() {
+  const board = document.getElementById('sticky-board');
+  const w = (board && board.clientWidth) || 600, h = (board && board.clientHeight) || 380;
+  const id = state.nextId++;
+  state.stickies.push({
+    id, cat:'other', title:'', text:'',
+    x: Math.random() * Math.max(1, w - NOTE_W),
+    y: Math.random() * Math.max(1, h - NOTE_H)
+  });
+  stickyEditingId = id;
+  save();
+  renderStickies();
+}
+
+function renderStickies() {
+  const board = document.getElementById('sticky-board');
+  if (!board) return;
+  renderStickyLegend();
+  migrateStickies();
+
+  Object.keys(stickyEls).forEach(idStr => {
+    const id = Number(idStr);
+    if (!state.stickies.find(s => s.id === id)) {
+      stickyEls[id].el.remove();
+      delete stickyEls[id];
+    }
+  });
+
+  state.stickies.forEach(s => {
+    if (!stickyEls[s.id]) {
+      const el = buildStickyEl(s);
+      board.appendChild(el);
+      stickyEls[s.id] = { el, vx: (Math.random()-0.5)*26, vy: (Math.random()-0.5)*26 };
+    } else if (stickyEditingId !== s.id) {
+      updateStickyElView(stickyEls[s.id].el, s);
+    }
+    if (stickyEditingId === s.id) switchStickyToEdit(stickyEls[s.id].el, s);
+  });
+
+  if (!stickyAnimRunning) {
+    stickyAnimRunning = true;
+    board.addEventListener('mouseenter', () => stickyBoardHover = true);
+    board.addEventListener('mouseleave', () => stickyBoardHover = false);
+    requestAnimationFrame(stickyAnimTick);
+  }
+}
+
+function buildStickyEl(s) {
+  const el = document.createElement('div');
+  el.className = 'sticky-note-free';
+  el.dataset.id = s.id;
+  el.style.left = s.x + 'px';
+  el.style.top = s.y + 'px';
+  el.innerHTML = `
+    <span class="sn-del" onclick="deleteSticky(${s.id})">✕</span>
+    <div class="sn-view">
+      <div class="sn-title"></div>
+      <div class="sn-body-text"></div>
+    </div>
+    <span class="sn-cat-dot" onclick="cycleStickyCat(${s.id})"></span>`;
+  el.addEventListener('pointerdown', onStickyPointerDown);
+  el.addEventListener('dblclick', () => { stickyEditingId = s.id; renderStickies(); });
+  updateStickyElView(el, s);
+  return el;
+}
+
+function updateStickyElView(el, s) {
+  const c = catInfo(s.cat);
+  el.style.borderColor = c.color;
+  el.style.boxShadow = `0 0 8px 1px ${c.color}99, 0 0 0 1px ${c.color}33 inset`;
+  const titleEl = el.querySelector('.sn-title');
+  const bodyEl = el.querySelector('.sn-body-text');
+  if (titleEl) titleEl.textContent = s.title || '(untitled)';
+  if (bodyEl) bodyEl.textContent = s.text || '';
+  const dot = el.querySelector('.sn-cat-dot');
+  if (dot) dot.style.background = c.color;
+  const view = el.querySelector('.sn-view');
+  if (view) view.style.display = '';
+  const editWrap = el.querySelector('.sn-edit');
+  if (editWrap) editWrap.remove();
+}
+
+function switchStickyToEdit(el, s) {
+  if (el.querySelector('.sn-edit')) return;
+  const view = el.querySelector('.sn-view');
+  if (view) view.style.display = 'none';
+  const wrap = document.createElement('div');
+  wrap.className = 'sn-edit';
+  wrap.innerHTML = `
+    <input class="sn-title-input" type="text" placeholder="Title" value="${escapeHtml(s.title||'')}" />
+    <textarea class="sn-body-input" placeholder="Notes...">${escapeHtml(s.text||'')}</textarea>`;
+  el.appendChild(wrap);
+  const titleInput = wrap.querySelector('.sn-title-input');
+  const bodyInput = wrap.querySelector('.sn-body-input');
+  titleInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); bodyInput.focus(); }
+    if (e.key === 'Escape') finishStickyEdit(s.id, titleInput.value, bodyInput.value);
+  });
+  bodyInput.addEventListener('keydown', e => {
+    if (e.key === 'Escape') finishStickyEdit(s.id, titleInput.value, bodyInput.value);
+  });
+  bodyInput.addEventListener('blur', () => finishStickyEdit(s.id, titleInput.value, bodyInput.value));
+  titleInput.addEventListener('blur', () => {
+    setTimeout(() => { if (document.activeElement !== bodyInput) finishStickyEdit(s.id, titleInput.value, bodyInput.value); }, 80);
+  });
+  titleInput.focus();
+}
+
+function finishStickyEdit(id, title, text) {
+  if (stickyEditingId !== id) return;
+  const s = state.stickies.find(x => x.id === id);
+  if (!s) return;
+  title = title.trim(); text = text.trim();
+  stickyEditingId = null;
+  if (!title && !text) { deleteSticky(id); return; }
+  s.title = title; s.text = text;
+  save();
+  renderStickies();
+}
+
+function cycleStickyCat(id) {
+  const s = state.stickies.find(x => x.id === id); if (!s) return;
+  const idx = STICKY_CATEGORIES.findIndex(c => c.key === s.cat);
+  s.cat = STICKY_CATEGORIES[(idx+1) % STICKY_CATEGORIES.length].key;
+  save();
+  const rec = stickyEls[id];
+  if (rec) updateStickyElView(rec.el, s);
+}
+
+function deleteSticky(id) {
+  state.stickies = state.stickies.filter(s => s.id !== id);
+  if (stickyEditingId === id) stickyEditingId = null;
+  save();
+  renderStickies();
+}
+
+function onStickyPointerDown(e) {
+  if (e.target.closest('.sn-del') || e.target.closest('.sn-cat-dot') || e.target.closest('.sn-edit')) return;
+  const el = e.currentTarget;
+  const id = Number(el.dataset.id);
+  const rect = el.getBoundingClientRect();
+  stickyDrag = { id, offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top };
+  el.classList.add('dragging');
+  el.setPointerCapture(e.pointerId);
+  el.addEventListener('pointermove', onStickyPointerMove);
+  el.addEventListener('pointerup', onStickyPointerUp);
+  el.addEventListener('pointercancel', onStickyPointerUp);
+}
+
+function onStickyPointerMove(e) {
+  if (!stickyDrag) return;
+  const board = document.getElementById('sticky-board');
+  const boardRect = board.getBoundingClientRect();
+  const el = stickyEls[stickyDrag.id].el;
+  let x = e.clientX - boardRect.left - stickyDrag.offsetX;
+  let y = e.clientY - boardRect.top - stickyDrag.offsetY;
+  x = Math.max(0, Math.min(boardRect.width - NOTE_W, x));
+  y = Math.max(0, Math.min(boardRect.height - NOTE_H, y));
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+}
+
+function onStickyPointerUp(e) {
+  if (!stickyDrag) return;
+  const id = stickyDrag.id;
+  const el = stickyEls[id].el;
+  el.classList.remove('dragging');
+  el.removeEventListener('pointermove', onStickyPointerMove);
+  el.removeEventListener('pointerup', onStickyPointerUp);
+  el.removeEventListener('pointercancel', onStickyPointerUp);
+  const s = state.stickies.find(x => x.id === id);
+  if (s) { s.x = parseFloat(el.style.left) || 0; s.y = parseFloat(el.style.top) || 0; save(); }
+  stickyEls[id].vx = (Math.random()-0.5)*26;
+  stickyEls[id].vy = (Math.random()-0.5)*26;
+  stickyDrag = null;
+}
+
+let stickyLastTs = null;
+function stickyAnimTick(ts) {
+  const board = document.getElementById('sticky-board');
+  if (!board) { stickyAnimRunning = false; return; }
+  if (stickyLastTs === null) stickyLastTs = ts;
+  const dt = Math.min(0.05, (ts - stickyLastTs) / 1000);
+  stickyLastTs = ts;
+  const bw = board.clientWidth, bh = board.clientHeight;
+
+  if (!stickyBoardHover) {
+    state.stickies.forEach(s => {
+      const rec = stickyEls[s.id];
+      if (!rec || (stickyDrag && stickyDrag.id === s.id) || stickyEditingId === s.id) return;
+      let x = parseFloat(rec.el.style.left) || 0;
+      let y = parseFloat(rec.el.style.top) || 0;
+      x += rec.vx * dt; y += rec.vy * dt;
+      if (x <= 0) { x = 0; rec.vx = Math.abs(rec.vx); }
+      if (x >= bw - NOTE_W) { x = bw - NOTE_W; rec.vx = -Math.abs(rec.vx); }
+      if (y <= 0) { y = 0; rec.vy = Math.abs(rec.vy); }
+      if (y >= bh - NOTE_H) { y = bh - NOTE_H; rec.vy = -Math.abs(rec.vy); }
+      rec.el.style.left = x + 'px';
+      rec.el.style.top = y + 'px';
+      s.x = x; s.y = y;
+    });
+  }
+  resolveStickyCollisions(bw, bh);
+  requestAnimationFrame(stickyAnimTick);
+}
+
+function resolveStickyCollisions(bw, bh) {
+  const ids = state.stickies.map(s => s.id);
+  const isMovable = id => !(stickyDrag && stickyDrag.id === id) && stickyEditingId !== id;
+
+  for (let i = 0; i < ids.length; i++) {
+    for (let j = i + 1; j < ids.length; j++) {
+      const idA = ids[i], idB = ids[j];
+      const recA = stickyEls[idA], recB = stickyEls[idB];
+      if (!recA || !recB) continue;
+      const movableA = isMovable(idA), movableB = isMovable(idB);
+      if (!movableA && !movableB) continue;
+
+      let ax = parseFloat(recA.el.style.left) || 0, ay = parseFloat(recA.el.style.top) || 0;
+      let bx = parseFloat(recB.el.style.left) || 0, by = parseFloat(recB.el.style.top) || 0;
+
+      const dx = (ax + NOTE_W/2) - (bx + NOTE_W/2);
+      const dy = (ay + NOTE_H/2) - (by + NOTE_H/2);
+      const overlapX = NOTE_W - Math.abs(dx);
+      const overlapY = NOTE_H - Math.abs(dy);
+      if (overlapX <= 0 || overlapY <= 0) continue;
+
+      const pushX = overlapX < overlapY;
+      const sign = pushX ? (dx === 0 ? (Math.random() < 0.5 ? 1 : -1) : Math.sign(dx))
+                          : (dy === 0 ? (Math.random() < 0.5 ? 1 : -1) : Math.sign(dy));
+      const overlap = pushX ? overlapX : overlapY;
+
+      if (movableA && movableB) {
+        const half = overlap / 2;
+        if (pushX) { ax += sign*half; bx -= sign*half; recA.vx = Math.abs(recA.vx)*sign; recB.vx = -Math.abs(recB.vx)*sign; }
+        else { ay += sign*half; by -= sign*half; recA.vy = Math.abs(recA.vy)*sign; recB.vy = -Math.abs(recB.vy)*sign; }
+      } else if (movableA) {
+        if (pushX) { ax += sign*overlap; recA.vx = Math.abs(recA.vx)*sign; }
+        else { ay += sign*overlap; recA.vy = Math.abs(recA.vy)*sign; }
+      } else {
+        if (pushX) { bx -= sign*overlap; recB.vx = -Math.abs(recB.vx)*sign; }
+        else { by -= sign*overlap; recB.vy = -Math.abs(recB.vy)*sign; }
+      }
+
+      ax = Math.max(0, Math.min(bw - NOTE_W, ax));
+      ay = Math.max(0, Math.min(bh - NOTE_H, ay));
+      bx = Math.max(0, Math.min(bw - NOTE_W, bx));
+      by = Math.max(0, Math.min(bh - NOTE_H, by));
+
+      if (movableA) { recA.el.style.left = ax+'px'; recA.el.style.top = ay+'px'; const sA = state.stickies.find(s=>s.id===idA); if (sA) { sA.x = ax; sA.y = ay; } }
+      if (movableB) { recB.el.style.left = bx+'px'; recB.el.style.top = by+'px'; const sB = state.stickies.find(s=>s.id===idB); if (sB) { sB.x = bx; sB.y = by; } }
+    }
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 
 
