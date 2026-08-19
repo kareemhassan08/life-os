@@ -867,6 +867,29 @@ const getSessions  = ()    => JSON.parse(localStorage.getItem('workout-sessions'
 const saveSessions = arr   => { localStorage.setItem('workout-sessions', JSON.stringify(arr)); queueCloudSync(); };
 const save         = ()    => { localStorage.setItem('life_os_v2', JSON.stringify(state)); queueCloudSync(); };
 
+// Backfills any top-level field missing from an older saved/cloud-pulled
+// state object (e.g. `stickies` didn't exist in saves made before that
+// feature shipped). Runs on initial load and after every cloud pull, so a
+// new field added in code never crashes an existing user's old save.
+const STATE_DEFAULTS = {
+  habits: [],
+  screen: {},
+  workouts: {},
+  goals: [],
+  nutrition: { meals:{}, targets:{ cal:2400, pro:180, carb:220, fat:70 } },
+  stickies: [],
+  nextId: 10
+};
+function normalizeState() {
+  if (!state || typeof state !== 'object') { state = JSON.parse(JSON.stringify(STATE_DEFAULTS)); return; }
+  Object.keys(STATE_DEFAULTS).forEach(key => {
+    if (state[key] === undefined || state[key] === null) {
+      state[key] = JSON.parse(JSON.stringify(STATE_DEFAULTS[key]));
+    }
+  });
+}
+normalizeState();
+
 
 // ── 1b. CLOUD SYNC ───────────────────────────────────────────────────
 // Everything still writes to localStorage first (instant, offline-safe).
@@ -937,7 +960,7 @@ auth.onAuthStateChanged(user => {
   db.collection('users').doc(currentUid).get().then(doc => {
     if (doc.exists) {
       const data = doc.data();
-      if (data.state) { state = data.state; localStorage.setItem('life_os_v2', JSON.stringify(state)); }
+      if (data.state) { state = data.state; normalizeState(); localStorage.setItem('life_os_v2', JSON.stringify(state)); }
       if (data.workoutSessions) localStorage.setItem('workout-sessions', JSON.stringify(data.workoutSessions));
       if (data.tutorClients)    localStorage.setItem('tutor-clients', JSON.stringify(data.tutorClients));
       if (data.appealState)     localStorage.setItem('appeal-state', JSON.stringify(data.appealState));
