@@ -34,23 +34,6 @@
     --gl: #0a3d2e; --al: #3d2a08;
   }
 }
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyBHSuq1FYzEl9u22VtXjKxR1znFg3foGJ8",
-  authDomain: "life-os-b938d.firebaseapp.com",
-  projectId: "life-os-b938d",
-  storageBucket: "life-os-b938d.firebasestorage.app",
-  messagingSenderId: "650278523710",
-  appId: "1:650278523710:web:3b862f4c8b2e5833f9126f"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
 /* ── 2. RESET & BASE ──────────────────────────────────────────────── */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
@@ -638,7 +621,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <div class="card">
         <div class="ctitle" style="justify-content:space-between">
           <span>🍽 Meals today</span>
-          <button class="abtn" onclick="openMealModal()" style="font-size:11px;padding:3px 9px">+ add meal</button>
+          <div style="display:flex;gap:6px">
+            <button class="abtn" onclick="openDiningModal()" style="font-size:11px;padding:3px 9px">🏫 import from dining hall</button>
+            <button class="abtn" onclick="openMealModal()" style="font-size:11px;padding:3px 9px">+ add meal</button>
+          </div>
         </div>
         <div id="meal-list"><p class="empty-state">No meals logged today.</p></div>
       </div>
@@ -677,6 +663,37 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <div class="modal-btns">
       <button class="abtn" onclick="closeMealModal()">Cancel</button>
       <button class="abtn primary" onclick="addMeal()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- DINING HALL IMPORT MODAL -->
+<div class="modal-bg" id="dining-modal">
+  <div class="modal" style="max-width:480px">
+    <h3>Import from dining hall</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div class="frow">
+        <label>Dining hall</label>
+        <select id="dh-hall" class="ainp" style="width:100%"></select>
+      </div>
+      <div class="frow">
+        <label>Meal</label>
+        <select id="dh-meal" class="ainp" style="width:100%">
+          <option value="breakfast">Breakfast</option>
+          <option value="lunch">Lunch</option>
+          <option value="dinner">Dinner</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <button class="abtn" onclick="fetchDiningMenu()" style="flex:1">Load today's menu</button>
+      <button class="abtn" onclick="addCustomDiningItem()" title="Something not on the menu, or macros are wrong — add/fix it by hand">+ custom item</button>
+    </div>
+    <div id="dh-status" style="font-size:11px;color:var(--text3);margin-bottom:6px"></div>
+    <div id="dh-items" style="max-height:340px;overflow-y:auto"></div>
+    <div class="modal-btns">
+      <button class="abtn" onclick="closeDiningModal()">Cancel</button>
+      <button class="abtn primary" onclick="addSelectedDiningItems()">Add selected</button>
     </div>
   </div>
 </div>
@@ -809,6 +826,20 @@ let syncTimer = null;
 const DAY_MS = 86400000;
 const today  = () => new Date().toISOString().slice(0, 10);
 const fmt    = d  => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+// ── DINING HALL IMPORT CONFIG ────────────────────────────────────────
+// TODO(Kareem): after `firebase deploy --only functions:getMenu`, the CLI
+// prints the live URL — paste it here. It'll look like:
+//   https://getmenu-xxxxxxxxxx-uc.a.run.app   (2nd-gen functions)
+// or https://us-central1-life-os-b938d.cloudfunctions.net/getMenu (1st-gen)
+const NUTRISLICE_FN_URL = 'https://getmenu-gjkaeaxllq-uc.a.run.app';
+
+// Slugs confirmed from techdining.nutrislice.com/menu/{slug}/{meal} URLs.
+const HALL_SLUGS = [
+  { label: 'North Ave Dining Hall', value: 'north-ave-dining-hall' },
+  { label: 'Brittain',              value: 'brittain' },
+  { label: 'West Village',          value: 'west-village' }
+];
 
 const MOVEMENTS = {
   push:        ['Chest Fly','Incline DB press','Flat DB press','Dips','DB Skull Crusher','DB Overhead Tricep Extension','Tricep Push-ups','DB Front Raise','DB Lateral Raise','DB Overhead Press','DB Floor Press', 'Tricep Kickback'],
@@ -1746,6 +1777,146 @@ function renderNutrition() {
     type:'bar', data:{labels:days7.map(d=>fmt(d)),datasets:[{label:'Calories',data:days7.map(d=>(state.nutrition.meals[d]||[]).reduce((a,m)=>a+m.cal,0)),backgroundColor:'rgba(29,158,117,0.7)',borderRadius:4}]},
     options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:gc},ticks:{color:'var(--text2)'}},x:{grid:{display:false},ticks:{color:'var(--text2)'}}}}
   });
+}
+
+// ── 13b. DINING HALL IMPORT ──────────────────────────────────────────
+// Flow: fetchDiningMenu() calls your Cloud Function proxy (which itself
+// calls Nutrislice server-side, sidestepping the CORS block) -> shows a
+// checklist of today's items -> addSelectedDiningItems() converts checked
+// items into the exact same meal shape addMeal() already produces, so
+// they land in state.nutrition.meals and ride the existing save()/
+// queueCloudSync() pipeline. No separate write path, no schema drift.
+
+let diningItems = []; // last-fetched menu items, indexed to match checkbox rows
+
+function populateDiningHallSelect() {
+  const sel = document.getElementById('dh-hall'); if (!sel) return;
+  sel.innerHTML = HALL_SLUGS.map(h => `<option value="${h.value}">${h.label}</option>`).join('');
+}
+
+const openDiningModal = () => {
+  populateDiningHallSelect();
+  document.getElementById('dh-items').innerHTML = '';
+  document.getElementById('dh-status').textContent = '';
+  document.getElementById('dining-modal').classList.add('open');
+};
+const closeDiningModal = () => document.getElementById('dining-modal').classList.remove('open');
+document.getElementById('dining-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDiningModal(); });
+
+async function fetchDiningMenu() {
+  const hall = document.getElementById('dh-hall').value;
+  const mealType = document.getElementById('dh-meal').value;
+  const status = document.getElementById('dh-status');
+  const itemsEl = document.getElementById('dh-items');
+
+  if (!NUTRISLICE_FN_URL || NUTRISLICE_FN_URL.startsWith('PASTE_')) {
+    status.textContent = 'Cloud Function URL not set yet — see NUTRISLICE_FN_URL in the JS.';
+    return;
+  }
+
+  status.textContent = 'Loading…';
+  itemsEl.innerHTML = '';
+
+  try {
+    const url = `${NUTRISLICE_FN_URL}?hall=${encodeURIComponent(hall)}&mealType=${encodeURIComponent(mealType)}&date=${today()}`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (!resp.ok) { status.textContent = `Error: ${data.error || resp.status}`; return; }
+
+    diningItems = data.items || [];
+    if (!diningItems.length) { status.textContent = 'No items found for that hall/meal/day.'; return; }
+    status.textContent = `${diningItems.length} items — check what you ate, adjust qty if you had more than one serving.`;
+    renderDiningItems();
+  } catch (err) {
+    console.error('fetchDiningMenu failed', err);
+    status.textContent = 'Failed to load menu. Is the Cloud Function deployed and the URL correct?';
+  }
+}
+
+// Every field (name + all 4 macros) is a live input, not static text.
+// Why: Nutrislice's macros are sometimes wrong or missing for an item, so
+// rather than forcing you out to a separate "+ add meal" flow to fix it,
+// you can just overwrite the numbers inline before you commit. Qty still
+// auto-scales the ORIGINAL fetched values via recomputeDiningItemMacros —
+// but if you've hand-edited a macro field, changing qty again will
+// overwrite that edit back to qty × original. Order of operations: set
+// qty first, then hand-correct macros last.
+function renderDiningItems() {
+  const itemsEl = document.getElementById('dh-items');
+  itemsEl.innerHTML = diningItems.map((it, i) => `
+    <div class="hrow" style="align-items:flex-start;flex-wrap:wrap;gap:6px 0">
+      <input type="checkbox" id="dh-chk-${i}" style="margin-top:6px;margin-right:8px"/>
+      <div style="flex:1;min-width:180px">
+        <input type="text" id="dh-name-${i}" class="ainp" value="${(it.name || '').replace(/"/g,'&quot;')}" placeholder="Item name" style="width:100%;margin-bottom:4px;font-weight:500"/>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <input type="number" id="dh-cal-${i}"  class="ainp" value="${it.calories   ?? ''}" placeholder="cal"  style="width:60px" title="calories"/>
+          <input type="number" id="dh-pro-${i}"  class="ainp" value="${it.protein_g  ?? ''}" placeholder="pro"  style="width:56px" title="protein g"/>
+          <input type="number" id="dh-carb-${i}" class="ainp" value="${it.carbs_g    ?? ''}" placeholder="carb" style="width:56px" title="carbs g"/>
+          <input type="number" id="dh-fat-${i}"  class="ainp" value="${it.fat_g      ?? ''}" placeholder="fat"  style="width:56px" title="fat g"/>
+        </div>
+        ${it.serving_size ? `<div class="meal-macros" style="margin-top:3px">Nutrislice serving: ${it.serving_size}</div>` : ''}
+      </div>
+      ${it.custom ? '' : `<input type="number" id="dh-qty-${i}" class="ainp" value="1" min="0" step="0.5" style="width:52px;text-align:center" title="servings — rescales the macro fields above" oninput="recomputeDiningItemMacros(${i})"/>`}
+    </div>
+  `).join('');
+  // Newly-added items (fetched or custom) default to checked so a normal
+  // "load menu -> uncheck what you didn't eat -> add" flow works.
+  diningItems.forEach((_, i) => { const c = document.getElementById(`dh-chk-${i}`); if (c) c.checked = true; });
+}
+
+// Rescales the visible macro inputs to qty × the ORIGINAL fetched values
+// (stored once in it._baseCal etc. on first render) so repeated qty edits
+// don't compound on top of a previous rescale.
+function recomputeDiningItemMacros(i) {
+  const it = diningItems[i]; if (!it) return;
+  if (it._baseCal === undefined) {
+    it._baseCal = it.calories || 0; it._basePro = it.protein_g || 0;
+    it._baseCarb = it.carbs_g || 0; it._baseFat = it.fat_g || 0;
+  }
+  const qty = parseFloat(document.getElementById(`dh-qty-${i}`).value) || 0;
+  document.getElementById(`dh-cal-${i}`).value  = Math.round(it._baseCal  * qty);
+  document.getElementById(`dh-pro-${i}`).value  = Math.round(it._basePro  * qty);
+  document.getElementById(`dh-carb-${i}`).value = Math.round(it._baseCarb * qty);
+  document.getElementById(`dh-fat-${i}`).value  = Math.round(it._baseFat  * qty);
+}
+
+// For items Nutrislice doesn't have at all (an omelette made to order,
+// e.g.) or ones you're re-entering by hand because the API's numbers were
+// wrong. Appends a blank, checked, editable row — you google/estimate the
+// macros yourself and type them in, same as it works for real menu items.
+function addCustomDiningItem() {
+  diningItems.push({ name: '', calories: null, protein_g: null, carbs_g: null, fat_g: null, custom: true });
+  renderDiningItems();
+  document.getElementById('dh-status').textContent = diningItems.length + ' items — fill in the custom row you just added.';
+  const idx = diningItems.length - 1;
+  document.getElementById(`dh-name-${idx}`)?.focus();
+}
+
+function addSelectedDiningItems() {
+  const td = today();
+  if (!state.nutrition.meals[td]) state.nutrition.meals[td] = [];
+  let addedCount = 0;
+
+  diningItems.forEach((it, i) => {
+    const chk = document.getElementById(`dh-chk-${i}`);
+    if (!chk || !chk.checked) return;
+    const name = (document.getElementById(`dh-name-${i}`)?.value || '').trim();
+    if (!name) return; // skip blank custom rows silently
+    state.nutrition.meals[td].push({
+      name,
+      cal:  Math.round(parseFloat(document.getElementById(`dh-cal-${i}`)?.value)  || 0),
+      pro:  Math.round(parseFloat(document.getElementById(`dh-pro-${i}`)?.value)  || 0),
+      carb: Math.round(parseFloat(document.getElementById(`dh-carb-${i}`)?.value) || 0),
+      fat:  Math.round(parseFloat(document.getElementById(`dh-fat-${i}`)?.value)  || 0),
+      ts: Date.now()
+    });
+    addedCount++;
+  });
+
+  if (!addedCount) { alert('Check at least one item (with a name) first.'); return; }
+  save();
+  closeDiningModal();
+  renderNutrition();
 }
 
 // ── 15. TUTORING ──────────────────────────────────────────────────────
