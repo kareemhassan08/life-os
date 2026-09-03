@@ -669,7 +669,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
 <!-- DINING HALL IMPORT MODAL -->
 <div class="modal-bg" id="dining-modal">
-  <div class="modal" style="max-width:480px">
+  <div class="modal" style="width:94vw;max-width:1100px;max-height:90vh;overflow-y:auto">
     <h3>Import from dining hall</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
       <div class="frow">
@@ -690,7 +690,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <button class="abtn" onclick="addCustomDiningItem()" title="Something not on the menu, or macros are wrong — add/fix it by hand">+ custom item</button>
     </div>
     <div id="dh-status" style="font-size:11px;color:var(--text3);margin-bottom:6px"></div>
-    <div id="dh-items" style="max-height:340px;overflow-y:auto"></div>
+    <div id="dh-items" style="max-height:60vh;overflow-y:auto"></div>
     <div class="modal-btns">
       <button class="abtn" onclick="closeDiningModal()">Cancel</button>
       <button class="abtn primary" onclick="addSelectedDiningItems()">Add selected</button>
@@ -824,6 +824,11 @@ let syncTimer = null;
 // ── 1. CONSTANTS & DATA ───────────────────────────────────────────────
 
 const DAY_MS = 86400000;
+// Local calendar date, NOT UTC. new Date().toISOString() converts to UTC,
+// which silently rolls over to "tomorrow" in the evening for anyone west
+// of Greenwich (e.g. after ~8pm Eastern) — this affects every date-keyed
+// piece of state in the app (habit streaks, nutrition, workouts, appeal
+// checklist), not just the dining import that surfaced it.
 const today = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -835,7 +840,7 @@ const fmt    = d  => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { mon
 // prints the live URL — paste it here. It'll look like:
 //   https://getmenu-xxxxxxxxxx-uc.a.run.app   (2nd-gen functions)
 // or https://us-central1-life-os-b938d.cloudfunctions.net/getMenu (1st-gen)
-const NUTRISLICE_FN_URL = 'https://getmenu-gjkaeaxllq-uc.a.run.app';
+const NUTRISLICE_FN_URL = 'PASTE_YOUR_DEPLOYED_FUNCTION_URL_HERE';
 
 // Slugs confirmed from techdining.nutrislice.com/menu/{slug}/{meal} URLs.
 const HALL_SLUGS = [
@@ -1836,6 +1841,39 @@ async function fetchDiningMenu() {
   }
 }
 
+// Rough, admittedly-guessed conversions from a raw serving size (oz/g) into
+// something you can actually picture, matched by keyword in the item name.
+// This is a gut-check number, not a nutrition label — the weights per unit
+// are ballpark averages, not measured. First keyword match wins, so more
+// specific patterns are listed before their broader catch-alls.
+const PORTION_GUESSES = [
+  { match: /chicken breast/i,        unit: 'chicken breast',   grams: 170 },
+  { match: /chicken|turkey/i,        unit: 'palm-sized piece', grams: 115 },
+  { match: /beef|steak|pork|sausage/i, unit: 'palm-sized piece', grams: 115 },
+  { match: /salmon|tilapia|fish|shrimp/i, unit: 'fillet',       grams: 140 },
+  { match: /rice|quinoa|grain/i,     unit: 'serving spoon',    grams: 130 },
+  { match: /pasta|noodle/i,          unit: 'serving spoon',    grams: 140 },
+  { match: /salad|greens|slaw/i,     unit: 'handful',          grams: 60  },
+  { match: /soup|chili|stew/i,       unit: 'ladle',             grams: 240 },
+  { match: /egg/i,                   unit: 'egg',               grams: 50  },
+  { match: /bread|roll|bun|toast/i,  unit: 'slice',             grams: 40  },
+  { match: /beans|lentil/i,          unit: 'serving spoon',    grams: 130 }
+];
+
+function guessPortionLabel(name, servingSizeText) {
+  if (!name || !servingSizeText) return null;
+  const m = servingSizeText.match(/([\d.]+)\s*(oz|ounce|g|gram)/i);
+  if (!m) return null; // can't convert units like "1 each" or "1 cup" without more info — skip rather than guess wrong
+  let grams = parseFloat(m[1]);
+  if (/oz|ounce/i.test(m[2])) grams *= 28.35;
+  const guess = PORTION_GUESSES.find(g => g.match.test(name));
+  if (!guess) return null;
+  const count = Math.round((grams / guess.grams) * 2) / 2; // nearest half-unit
+  if (!count || count <= 0) return null;
+  const plural = count !== 1 ? 's' : '';
+  return `≈ ${count} ${guess.unit}${plural}`;
+}
+
 // Every field (name + all 4 macros) is a live input, not static text.
 // Why: Nutrislice's macros are sometimes wrong or missing for an item, so
 // rather than forcing you out to a separate "+ add meal" flow to fix it,
@@ -1844,9 +1882,19 @@ async function fetchDiningMenu() {
 // but if you've hand-edited a macro field, changing qty again will
 // overwrite that edit back to qty × original. Order of operations: set
 // qty first, then hand-correct macros last.
+//
+// diningItems now mixes two row types: `header` (station names like
+// "Mindful Bytes" — a label only, not selectable) and `item` (the actual
+// food, checkbox + editable fields). Headers are skipped entirely by the
+// checkbox-default and add-selected logic since they have no dh-chk-i id.
 function renderDiningItems() {
   const itemsEl = document.getElementById('dh-items');
-  itemsEl.innerHTML = diningItems.map((it, i) => `
+  itemsEl.innerHTML = diningItems.map((it, i) => {
+    if (it.type === 'header') {
+      return `<div class="slbl" style="margin-top:14px;padding-top:10px;border-top:.5px solid var(--border)">${it.text}</div>`;
+    }
+    const portionGuess = it.custom ? null : guessPortionLabel(it.name, it.serving_size);
+    return `
     <div class="hrow" style="align-items:flex-start;flex-wrap:wrap;gap:6px 0">
       <input type="checkbox" id="dh-chk-${i}" style="margin-top:6px;margin-right:8px"/>
       <div style="flex:1;min-width:180px">
@@ -1858,20 +1906,23 @@ function renderDiningItems() {
           <input type="number" id="dh-fat-${i}"  class="ainp" value="${it.fat_g      ?? ''}" placeholder="fat"  style="width:56px" title="fat g"/>
         </div>
         ${it.serving_size ? `<div class="meal-macros" style="margin-top:3px">Nutrislice serving: ${it.serving_size}</div>` : ''}
+        ${portionGuess ? `<div class="meal-macros" style="margin-top:1px;color:var(--text3);font-style:italic">${portionGuess} (guessed)</div>` : ''}
       </div>
       ${it.custom ? '' : `<input type="number" id="dh-qty-${i}" class="ainp" value="1" min="0" step="0.5" style="width:52px;text-align:center" title="servings — rescales the macro fields above" oninput="recomputeDiningItemMacros(${i})"/>`}
-    </div>
-  `).join('');
-  // Newly-added items (fetched or custom) default to checked so a normal
-  // "load menu -> uncheck what you didn't eat -> add" flow works.
-  diningItems.forEach((_, i) => { const c = document.getElementById(`dh-chk-${i}`); if (c) c.checked = true; });
+    </div>`;
+  }).join('');
+  // Fetched menu items default UNCHECKED — a full dining hall menu is
+  // usually way more items than you actually ate, so "check what you had"
+  // beats "uncheck what you didn't." Custom items are the exception: you
+  // just deliberately added that row, so it defaults checked.
+  diningItems.forEach((it, i) => { if (it.type === 'header') return; const c = document.getElementById(`dh-chk-${i}`); if (c) c.checked = !!it.custom; });
 }
 
 // Rescales the visible macro inputs to qty × the ORIGINAL fetched values
 // (stored once in it._baseCal etc. on first render) so repeated qty edits
 // don't compound on top of a previous rescale.
 function recomputeDiningItemMacros(i) {
-  const it = diningItems[i]; if (!it) return;
+  const it = diningItems[i]; if (!it || it.type === 'header') return;
   if (it._baseCal === undefined) {
     it._baseCal = it.calories || 0; it._basePro = it.protein_g || 0;
     it._baseCarb = it.carbs_g || 0; it._baseFat = it.fat_g || 0;
@@ -1888,7 +1939,7 @@ function recomputeDiningItemMacros(i) {
 // wrong. Appends a blank, checked, editable row — you google/estimate the
 // macros yourself and type them in, same as it works for real menu items.
 function addCustomDiningItem() {
-  diningItems.push({ name: '', calories: null, protein_g: null, carbs_g: null, fat_g: null, custom: true });
+  diningItems.push({ type: 'item', name: '', calories: null, protein_g: null, carbs_g: null, fat_g: null, custom: true });
   renderDiningItems();
   document.getElementById('dh-status').textContent = diningItems.length + ' items — fill in the custom row you just added.';
   const idx = diningItems.length - 1;
@@ -1901,6 +1952,7 @@ function addSelectedDiningItems() {
   let addedCount = 0;
 
   diningItems.forEach((it, i) => {
+    if (it.type === 'header') return;
     const chk = document.getElementById(`dh-chk-${i}`);
     if (!chk || !chk.checked) return;
     const name = (document.getElementById(`dh-name-${i}`)?.value || '').trim();
