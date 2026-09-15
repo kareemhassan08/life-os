@@ -321,6 +321,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
   <!-- FITNESS -->
   <div class="pane" id="pane-fitness">
+    <div class="card" style="margin-bottom:var(--gap)">
+      <div class="ctitle" style="justify-content:space-between">
+        <span id="prog-day-title">📋 Today's Program</span>
+        <span id="prog-weekab-toggle" style="font-size:11px;color:var(--text3);cursor:pointer" title="Toggle Day 5's two-week A/B rotation"></span>
+      </div>
+      <div id="prog-note" style="font-size:11px;color:var(--am);margin-bottom:8px;display:none"></div>
+      <div id="prog-checklist"></div>
+    </div>
     <div class="fit-grid">
       <!-- Muscle map -->
       <div class="card" style="margin-bottom:0">
@@ -554,6 +562,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
             <option value="push">Push</option><option value="pull">Pull</option>
             <option value="core">Core</option><option value="lower">Lower</option>
             <option value="flexibility">Flexibility</option>
+            <option value="explosive">Explosive</option>
           </select>
         </div>
         <div style="margin-bottom:10px">
@@ -612,10 +621,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   <div class="pane" id="pane-nutrition">
     <div class="slbl">Today's macros</div>
     <div class="macro-row">
-      <div class="macro-card"><div class="mv" id="mac-cal">—</div><div class="ml">Calories</div><div class="mt" id="mac-cal-t">target: 2400</div><div class="mbar"><div class="mbar-fill" id="mbar-cal" style="background:var(--am);width:0%"></div></div></div>
-      <div class="macro-card"><div class="mv" id="mac-pro">—</div><div class="ml">Protein (g)</div><div class="mt" id="mac-pro-t">target: 180g</div><div class="mbar"><div class="mbar-fill" id="mbar-pro" style="background:var(--g);width:0%"></div></div></div>
-      <div class="macro-card"><div class="mv" id="mac-carb">—</div><div class="ml">Carbs (g)</div><div class="mt">target: 220g</div><div class="mbar"><div class="mbar-fill" id="mbar-carb" style="background:#378ADD;width:0%"></div></div></div>
-      <div class="macro-card"><div class="mv" id="mac-fat">—</div><div class="ml">Fat (g)</div><div class="mt">target: 70g</div><div class="mbar"><div class="mbar-fill" id="mbar-fat" style="background:#D4537E;width:0%"></div></div></div>
+      <div class="macro-card"><div class="mv" id="mac-cal">—</div><div class="ml">Calories</div><div class="mt" id="mac-cal-t">target: 2400</div><div class="mt" id="mac-cal-rem"></div><div class="mbar"><div class="mbar-fill" id="mbar-cal" style="background:var(--am);width:0%"></div></div></div>
+      <div class="macro-card"><div class="mv" id="mac-pro">—</div><div class="ml">Protein (g)</div><div class="mt" id="mac-pro-t">target: 180g</div><div class="mt" id="mac-pro-rem"></div><div class="mbar"><div class="mbar-fill" id="mbar-pro" style="background:var(--g);width:0%"></div></div></div>
+      <div class="macro-card"><div class="mv" id="mac-carb">—</div><div class="ml">Carbs (g)</div><div class="mt" id="mac-carb-t">target: 220g</div><div class="mt" id="mac-carb-rem"></div><div class="mbar"><div class="mbar-fill" id="mbar-carb" style="background:#378ADD;width:0%"></div></div></div>
+      <div class="macro-card"><div class="mv" id="mac-fat">—</div><div class="ml">Fat (g)</div><div class="mt" id="mac-fat-t">target: 70g</div><div class="mt" id="mac-fat-rem"></div><div class="mbar"><div class="mbar-fill" id="mbar-fat" style="background:#D4537E;width:0%"></div></div></div>
     </div>
     <div class="twocol">
       <div class="card">
@@ -690,6 +699,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <button class="abtn" onclick="addCustomDiningItem()" title="Something not on the menu, or macros are wrong — add/fix it by hand">+ custom item</button>
     </div>
     <div id="dh-status" style="font-size:11px;color:var(--text3);margin-bottom:6px"></div>
+    <input type="text" id="dh-search" class="ainp" placeholder="Search loaded items…" style="width:100%;margin-bottom:8px" oninput="filterDiningItems()"/>
     <div id="dh-items" style="max-height:60vh;overflow-y:auto"></div>
     <div class="modal-btns">
       <button class="abtn" onclick="closeDiningModal()">Cancel</button>
@@ -850,11 +860,12 @@ const HALL_SLUGS = [
 ];
 
 const MOVEMENTS = {
-  push:        ['Chest Fly','Incline DB press','Flat DB press','Dips','DB Skull Crusher','DB Overhead Tricep Extension','Tricep Push-ups','DB Front Raise','DB Lateral Raise','DB Overhead Press','DB Floor Press', 'Tricep Kickback'],
-  pull:        ['Pull-ups','Chin-ups','DB row (single arm)','DB chest-supported row','DB face pull','DB hammer curl','DB incline bicep curl','DB Zottman curl','Inverted row'],
+  push:        ['Chest Fly','Incline DB press','Flat DB press','Dips','DB Skull Crusher','DB Overhead Tricep Extension','Tricep Push-ups','DB Front Raise','DB Lateral Raise','DB Overhead Press','DB Floor Press', 'Tricep Kickback','Incline bench press','DB or machine shoulder press','Machine chest flies','Cable tricep overhead extension','Close-grip push-up or close-grip bench','Cable tricep pushdown','Lateral raise'],
+  pull:        ['Pull-ups','Chin-ups','DB row (single arm)','DB chest-supported row','DB face pull','DB hammer curl','DB incline bicep curl','DB Zottman curl','Inverted row','Assisted pull-up','Machine iso row','Machine bicep curl','Preacher curl','Wrist curl','Hammer curl','Rear delt pec deck'],
   core:        ['Hanging Knee Raise','Hanging Leg Raise','V-ups','DB Russian Twist','Plank','Ab wheel rollout','Hollow body hold'],
-  lower:       ['DB Romanian Deadlift','Pistol Squat','DB Explosive Split Squat','DB Bulgarian split squat','DB Goblet squat','DB / One Leg Calf Raise','Step-ups','Nordic curl'],
-  flexibility: ['Head Through Knees','Full split','Chest to Floor','Jefferson curl','Shoulder dislocates','Couch stretch','Pigeon pose']
+  lower:       ['DB Romanian Deadlift','Pistol Squat','DB Explosive Split Squat','DB Bulgarian split squat','DB Goblet squat','DB / One Leg Calf Raise','Step-ups','Nordic curl','Back squat','ATG split squat','Hamstring curl','Calf raise'],
+  flexibility: ['Head Through Knees','Full split','Chest to Floor','Jefferson curl','Shoulder dislocates','Couch stretch','Pigeon pose','Deep squat hold','90/90 hip flow','T-spine rotation stretch','Ankle dorsiflexion knee-to-wall','Toe yoga','Tibialis raises'],
+  explosive:   ['Hang power clean','Backboard reactive pogo','Landing/braking complex','Sprint build-ups']
 };
 
 const MUSCLE_MAP = {
@@ -876,6 +887,75 @@ const MUSCLE_MAP = {
   calves:     { ids: ['m-calf-fl','m-calf-fr','m-calf-bl','m-calf-br','m-calf-s'],     label: 'Calves',                  moves: ['DB / One Leg Calf Raise'] },
   forearms:   { ids: ['m-fore-fl','m-fore-fr','m-fore-bl','m-fore-br'],                label: 'Forearms',                moves: ['DB Zottman curl','Pull-ups','DB row (single arm)'] }
 };
+
+// ── PROGRAM (from GT_Fitness_Program.md) ─────────────────────────────
+// `loggable:false` = mobility/cardio items with no sets/reps model — shown
+// as a plain checklist item, no "Log" button. `group` on loggable items
+// maps to a MOVEMENTS bucket so the Log button can drive the existing
+// muscle-select/movement-select logger directly.
+const PROGRAM_DAYS = {
+  1: { title: 'Upper Push', exercises: [
+    { name: 'Incline bench press', group: 'push', note: '3 sets to failure — ~30° bench, retract/depress shoulder blades' },
+    { name: 'DB or machine shoulder press', group: 'push', note: '3 sets to failure' },
+    { name: 'Lateral raise', group: 'push', note: '3 sets — top lever for shoulder:waist goal' },
+    { name: 'Machine chest flies', group: 'push', note: '3 sets' },
+    { name: 'Cable tricep pushdown', group: 'push', note: '3 sets' },
+    { name: 'Cable tricep overhead extension', group: 'push', note: '3 sets — brace elbow or sub skullcrusher' }
+  ]},
+  2: { title: 'Leg Strength', exercises: [
+    { name: 'Back squat', group: 'lower', note: '3 sets to failure — working weight 185, treat 205 as occasional test only' },
+    { name: 'ATG split squat', group: 'lower', note: '3 sets/side, progressively loaded — permanent knee-resilience anchor' },
+    { name: 'Hamstring curl', group: 'lower', note: '3 sets' },
+    { name: 'Calf raise', group: 'lower', note: '3 sets' }
+  ]},
+  3: { title: 'Upper Pull + Arms', exercises: [
+    { name: 'Assisted pull-up', group: 'pull', note: '3 sets to failure — regress toward unassisted' },
+    { name: 'Machine iso row', group: 'pull', note: '3 sets' },
+    { name: 'Machine bicep curl', group: 'pull', note: '3 sets (or incline DB curl)' },
+    { name: 'Hammer curl', group: 'pull', note: '3 sets' },
+    { name: 'Wrist curl', group: 'pull', note: '3 sets' }
+  ]},
+  4: { title: 'Flexibility + ATG/GOATA + Zone 2', exercises: [
+    { name: 'Nordic curl', group: 'lower', note: '3×5, assisted/eccentric-only — progress ROM before load' },
+    { name: 'Tibialis raises', group: 'flexibility', note: '3×15–20' },
+    { name: 'Calf raise', group: 'lower', note: '3×15 each, straight + bent knee' },
+    { name: 'Hanging Leg Raise', group: 'core', note: '3×10-12' },
+    { name: 'Forward + backward walking', loggable: false, note: '10-15 min, Zone 2' },
+    { name: 'Deep squat hold', group: 'flexibility', note: '3×45s' },
+    { name: 'Couch stretch', group: 'flexibility', note: '3×45s/side' },
+    { name: '90/90 hip flow', group: 'flexibility', note: '5 min' },
+    { name: 'T-spine rotation stretch', group: 'flexibility', note: '2×8/side' },
+    { name: 'Ankle dorsiflexion knee-to-wall', group: 'flexibility', note: '3×10/side' },
+    { name: 'Toe yoga + short foot holds', loggable: false, note: '2 rounds' }
+  ]},
+  5: { title: 'Explosive/Elastic', gated: true,
+       note: "Gated — don't add real volume until ATG split squats & Nordics are pain-free at increasing load, and the Day 4 deep squat hold feels loose.",
+       base: [
+         { name: 'Hang power clean', group: 'explosive', note: '3×3 — first, while fresh' }
+       ],
+       weekA: [
+         { name: 'Backboard reactive pogo', group: 'explosive', note: 'short bouts, no run-up' },
+         { name: 'Landing/braking complex', group: 'explosive', note: '~2×5, stick landing, explode vertically' }
+       ],
+       weekB: [
+         { name: 'Landing/braking complex', group: 'explosive', note: 'broad-jump focus on the explode-out' },
+         { name: 'Sprint build-ups', group: 'explosive', note: '75-85% effort, not max' }
+       ]
+  },
+  6: { title: 'Upper Accessory', mandatory: true, exercises: [
+    { name: 'Lateral raise', group: 'push', note: '3 sets — doubles weekly lateral delt volume' },
+    { name: 'Rear delt pec deck', group: 'pull', note: '3 sets' },
+    { name: 'Close-grip push-up or close-grip bench', group: 'push', note: '3 sets' },
+    { name: 'Preacher curl', group: 'pull', note: '3 sets (or incline DB curl)' },
+    { name: 'Hammer curl', group: 'pull', note: '3 sets' }
+  ]},
+  7: { title: 'Rest', exercises: [] }
+};
+
+// Sun=1...Sat=7 per the doc's Fall 2026 schedule table. The doc itself
+// flags this as the ORIGINAL planned layout, not confirmed current —
+// index matches Date.getDay() (0=Sun..6=Sat) directly.
+const WEEKDAY_TO_PROGRAM_DAY = [1, 2, 3, 4, 5, 6, 7];
 
 const GROUP_COLORS = { push:'#E1F5EE', pull:'#E6F1FB', core:'#FAEEDA', lower:'#FAECE7', flexibility:'#FBEAF0' };
 const GROUP_TEXT   = { push:'#0F6E56', pull:'#185FA5', core:'#854F0B', lower:'#993C1D', flexibility:'#993556' };
@@ -917,6 +997,8 @@ const STATE_DEFAULTS = {
   goals: [],
   nutrition: { meals:{}, targets:{ cal:2400, pro:180, carb:220, fat:70 } },
   stickies: [],
+  programLog: {},       // "YYYY-MM-DD" -> [exercise names checked off that day]
+  programWeekAB: 'A',   // manual toggle for the Day 5 two-week rotation
   nextId: 10
 };
 function normalizeState() {
@@ -1025,7 +1107,7 @@ function showTab(t) {
   document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
   document.querySelector(`.tab[onclick="showTab('${t}')"]`).classList.add('active');
   document.getElementById('pane-' + t).classList.add('active');
-  if (t === 'fitness')   { renderSessionLog(); populateChartDropdown(); applyIntensityColors(); loadNote('fitness'); }
+  if (t === 'fitness')   { renderProgramDay(); renderSessionLog(); populateChartDropdown(); applyIntensityColors(); loadNote('fitness'); }
   if (t === 'nutrition') { renderNutrition(); loadNote('nutrition'); }
   if (t === 'tutoring')  { renderTutoring(); loadNote('tutoring'); }
   if (t === 'appeal')    { renderAppeal(); loadNote('appeal'); }
@@ -1046,6 +1128,7 @@ function render() {
 const STICKY_CATEGORIES = [
   {key:'school', label:'School', color:'#F5A524'},
   {key:'research', label:'Research', color:'#1D9E75'},
+  {key:'club', label:'Club', color:'#8B5CF6'},
   {key:'personal', label:'Personal', color:'#3B82F6'},
   {key:'fitness', label:'Fitness', color:'#EC4899'},
   {key:'other', label:'Other', color:'#9CA3AF'}
@@ -1599,6 +1682,67 @@ function selectMuscle(key) {
 }
 
 // Clicking a badge pre-fills the logger and scrolls to it
+// ── TODAY'S PROGRAM ──────────────────────────────────────────────────
+// Log button reuses prefillMovement() as-is — every program exercise name
+// was added into the matching MOVEMENTS bucket above specifically so this
+// exact-match lookup works without a separate alias layer.
+function renderProgramDay() {
+  const dow = new Date().getDay(); // 0=Sun..6=Sat
+  const dayNum = WEEKDAY_TO_PROGRAM_DAY[dow];
+  const day = PROGRAM_DAYS[dayNum];
+  const td = today();
+  if (!state.programLog[td]) state.programLog[td] = [];
+
+  const flag = day.mandatory ? ' · mandatory' : day.gated ? ' · gated' : '';
+  document.getElementById('prog-day-title').textContent = `📋 Day ${dayNum}: ${day.title}${flag}`;
+
+  const noteEl = document.getElementById('prog-note');
+  if (day.note) { noteEl.textContent = day.note; noteEl.style.display = 'block'; }
+  else { noteEl.style.display = 'none'; }
+
+  const toggleEl = document.getElementById('prog-weekab-toggle');
+  if (dayNum === 5) {
+    toggleEl.textContent = `Week ${state.programWeekAB} (tap to switch)`;
+    toggleEl.onclick = () => { state.programWeekAB = state.programWeekAB === 'A' ? 'B' : 'A'; save(); renderProgramDay(); };
+  } else {
+    toggleEl.textContent = ''; toggleEl.onclick = null;
+  }
+
+  const exercises = dayNum === 5
+    ? [...day.base, ...(state.programWeekAB === 'A' ? day.weekA : day.weekB)]
+    : day.exercises;
+
+  const listEl = document.getElementById('prog-checklist');
+  if (!exercises.length) {
+    listEl.innerHTML = '<p class="empty-state">Rest day — nothing prescribed.</p>';
+    return;
+  }
+  listEl.innerHTML = exercises.map((ex, i) => {
+    const done = state.programLog[td].includes(ex.name);
+    const canLog = ex.loggable !== false;
+    return `<div class="hrow">
+      <label style="display:flex;align-items:flex-start;gap:8px;flex:1;cursor:pointer">
+        <input type="checkbox" ${done ? 'checked' : ''} style="margin-top:3px" onchange="toggleProgramItem('${ex.name.replace(/'/g,"\\'")}', this.checked)"/>
+        <span>
+          <div class="hname" style="${done ? 'text-decoration:line-through;color:var(--text3)' : ''}">${ex.name}</div>
+          <div class="hstrk">${ex.note || ''}</div>
+        </span>
+      </label>
+      ${canLog ? `<button class="abtn" style="font-size:11px;padding:3px 9px" onclick="prefillMovement('${ex.name.replace(/'/g,"\\'")}')">Log</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function toggleProgramItem(name, checked) {
+  const td = today();
+  if (!state.programLog[td]) state.programLog[td] = [];
+  const i = state.programLog[td].indexOf(name);
+  if (checked && i === -1) state.programLog[td].push(name);
+  if (!checked && i > -1) state.programLog[td].splice(i, 1);
+  save();
+  renderProgramDay();
+}
+
 function prefillMovement(movement) {
   for (const [group, moves] of Object.entries(MOVEMENTS)) {
     if (moves.includes(movement)) {
@@ -1775,6 +1919,21 @@ function renderNutrition() {
   setM('mac-carb','mbar-carb',totals.carb,targets.carb||220,'#378ADD'); setM('mac-fat','mbar-fat',totals.fat,targets.fat||70,'#D4537E');
   document.getElementById('mac-cal-t').textContent=`target: ${targets.cal||2400}`;
   document.getElementById('mac-pro-t').textContent=`target: ${targets.pro||180}g`;
+  document.getElementById('mac-carb-t').textContent=`target: ${targets.carb||220}g`;
+  document.getElementById('mac-fat-t').textContent=`target: ${targets.fat||70}g`;
+  // "Remaining" = target - consumed. Negative means you're over — shown in
+  // red with "over" instead of a negative number, since "-40g over" reads
+  // worse than "40g over".
+  const setRem = (rid, consumed, tgt, unit) => {
+    const el = document.getElementById(rid); if (!el) return;
+    const rem = Math.round(tgt - consumed);
+    if (rem >= 0) { el.textContent = `${rem}${unit} left`; el.style.color = 'var(--text3)'; }
+    else { el.textContent = `${Math.abs(rem)}${unit} over`; el.style.color = 'var(--rd)'; }
+  };
+  setRem('mac-cal-rem',  totals.cal,  targets.cal  || 2400, '');
+  setRem('mac-pro-rem',  totals.pro,  targets.pro  || 180,  'g');
+  setRem('mac-carb-rem', totals.carb, targets.carb || 220,  'g');
+  setRem('mac-fat-rem',  totals.fat,  targets.fat  || 70,   'g');
   document.getElementById('meal-list').innerHTML=meals.length
     ? meals.map((m,i)=>`<div class="meal-row"><div><div class="meal-name">${m.name}</div><div class="meal-macros">${m.pro}g P · ${m.carb}g C · ${m.fat}g F</div></div><div style="display:flex;align-items:center;gap:8px"><div class="meal-cals">${m.cal} cal</div><button class="delbtn" onclick="deleteMeal(${i})">✕</button></div></div>`).join('')
     : '<p class="empty-state">No meals logged today.</p>';
@@ -1806,6 +1965,7 @@ const openDiningModal = () => {
   populateDiningHallSelect();
   document.getElementById('dh-items').innerHTML = '';
   document.getElementById('dh-status').textContent = '';
+  document.getElementById('dh-search').value = '';
   document.getElementById('dining-modal').classList.add('open');
 };
 const closeDiningModal = () => document.getElementById('dining-modal').classList.remove('open');
@@ -1849,29 +2009,57 @@ async function fetchDiningMenu() {
 const PORTION_GUESSES = [
   { match: /chicken breast/i,        unit: 'chicken breast',   grams: 170 },
   { match: /chicken|turkey/i,        unit: 'palm-sized piece', grams: 115 },
-  { match: /beef|steak|pork|sausage/i, unit: 'palm-sized piece', grams: 115 },
+  { match: /beef|steak|pork|sausage|bacon/i, unit: 'palm-sized piece', grams: 115 },
   { match: /salmon|tilapia|fish|shrimp/i, unit: 'fillet',       grams: 140 },
   { match: /rice|quinoa|grain/i,     unit: 'serving spoon',    grams: 130 },
   { match: /pasta|noodle/i,          unit: 'serving spoon',    grams: 140 },
   { match: /salad|greens|slaw/i,     unit: 'handful',          grams: 60  },
-  { match: /soup|chili|stew/i,       unit: 'ladle',             grams: 240 },
+  { match: /soup|chili|stew|broth/i, unit: 'ladle',             grams: 240 },
   { match: /egg/i,                   unit: 'egg',               grams: 50  },
-  { match: /bread|roll|bun|toast/i,  unit: 'slice',             grams: 40  },
-  { match: /beans|lentil/i,          unit: 'serving spoon',    grams: 130 }
+  { match: /bread|roll|bun|toast|hoagie/i, unit: 'slice',       grams: 40  },
+  { match: /beans|lentil/i,          unit: 'serving spoon',    grams: 130 },
+  { match: /cheese/i,                unit: 'slice',             grams: 28  }
 ];
 
-function guessPortionLabel(name, servingSizeText) {
-  if (!name || !servingSizeText) return null;
-  const m = servingSizeText.match(/([\d.]+)\s*(oz|ounce|g|gram)/i);
+// Fallback ladder for anything that doesn't match a specific food keyword
+// (sauces, dressings, misc deli toppings) but still has a real weight —
+// picks the smallest bucket the weight fits under, so a 1oz dressing
+// becomes "Tbsp"-scale instead of getting no guess at all. Still just a
+// gut-check number, same as the specific guesses above.
+const GENERIC_FALLBACK = [
+  { max: 20,       unit: 'Tbsp',          grams: 15  },
+  { max: 90,       unit: 'small scoop',   grams: 60  },
+  { max: 200,      unit: 'serving spoon', grams: 130 },
+  { max: Infinity, unit: 'cup',           grams: 240 }
+];
+
+function parseGramsFromServing(servingSizeText) {
+  if (!servingSizeText) return null;
+  const m = servingSizeText.match(/([\d.]+)\s*(oz|ounce|lbs?|pound|g|gram)/i);
   if (!m) return null; // can't convert units like "1 each" or "1 cup" without more info — skip rather than guess wrong
-  let grams = parseFloat(m[1]);
-  if (/oz|ounce/i.test(m[2])) grams *= 28.35;
-  const guess = PORTION_GUESSES.find(g => g.match.test(name));
-  if (!guess) return null;
-  const count = Math.round((grams / guess.grams) * 2) / 2; // nearest half-unit
-  if (!count || count <= 0) return null;
+  const val = parseFloat(m[1]);
+  const unit = m[2].toLowerCase();
+  if (unit.startsWith('oz') || unit.startsWith('ounce')) return val * 28.35;
+  if (unit.startsWith('lb') || unit.startsWith('pound')) return val * 453.6;
+  return val; // already grams
+}
+
+function guessPortionLabel(name, servingSizeText) {
+  const grams = parseGramsFromServing(servingSizeText);
+  if (!grams) return null;
+  const specific = PORTION_GUESSES.find(g => g.match.test(name || ''));
+  let bucket = specific;
+  let count = bucket ? Math.round((grams / bucket.grams) * 2) / 2 : 0;
+  // A specific match can round down to 0 (e.g. a 1oz deli slice matching the
+  // "turkey" keyword, which assumes a whole 115g cooked portion) — in that
+  // case fall through to the generic bucket instead of showing nothing.
+  if (!bucket || count <= 0) {
+    bucket = GENERIC_FALLBACK.find(b => grams <= b.max);
+    count = bucket ? Math.round((grams / bucket.grams) * 2) / 2 : 0;
+  }
+  if (!bucket || count <= 0) return null;
   const plural = count !== 1 ? 's' : '';
-  return `≈ ${count} ${guess.unit}${plural}`;
+  return `≈ ${count} ${bucket.unit}${plural}`;
 }
 
 // Every field (name + all 4 macros) is a live input, not static text.
@@ -1891,7 +2079,7 @@ function renderDiningItems() {
   const itemsEl = document.getElementById('dh-items');
   itemsEl.innerHTML = diningItems.map((it, i) => {
     if (it.type === 'header') {
-      return `<div class="slbl" style="margin-top:14px;padding-top:10px;border-top:.5px solid var(--border)">${it.text}</div>`;
+      return `<div style="margin-top:16px;margin-bottom:2px;padding:7px 10px;background:var(--bg);border-radius:var(--r);font-size:14px;font-weight:600;color:var(--text)">${it.text}</div>`;
     }
     const portionGuess = it.custom ? null : guessPortionLabel(it.name, it.serving_size);
     return `
@@ -1944,6 +2132,29 @@ function addCustomDiningItem() {
   document.getElementById('dh-status').textContent = diningItems.length + ' items — fill in the custom row you just added.';
   const idx = diningItems.length - 1;
   document.getElementById(`dh-name-${idx}`)?.focus();
+  filterDiningItems(); // re-apply any active search so the new row doesn't vanish under an old filter
+}
+
+// Filters the ALREADY-LOADED item list in place — no re-fetch, no lost
+// checkbox/edit state. Relies on #dh-items having exactly one direct child
+// div per diningItems entry, in the same order (true as of renderDiningItems).
+// Headers hide themselves if none of their section's items currently match.
+function filterDiningItems() {
+  const q = (document.getElementById('dh-search').value || '').trim().toLowerCase();
+  const rows = Array.from(document.getElementById('dh-items').children);
+  let lastHeaderEl = null, headerHasMatch = false;
+  rows.forEach((rowEl, i) => {
+    const it = diningItems[i]; if (!it) return;
+    if (it.type === 'header') {
+      if (lastHeaderEl) lastHeaderEl.style.display = headerHasMatch ? '' : 'none';
+      lastHeaderEl = rowEl; headerHasMatch = false;
+      return;
+    }
+    const matches = !q || (it.name || '').toLowerCase().includes(q);
+    rowEl.style.display = matches ? '' : 'none';
+    if (matches) headerHasMatch = true;
+  });
+  if (lastHeaderEl) lastHeaderEl.style.display = headerHasMatch ? '' : 'none';
 }
 
 function addSelectedDiningItems() {
