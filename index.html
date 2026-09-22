@@ -575,6 +575,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         </div>
         <div id="sets-container"></div>
         <div style="margin-bottom:10px">
+          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Date</label>
+          <input type="date" id="session-date" class="ainp" style="width:100%"/>
+        </div>
+        <div style="margin-bottom:10px">
           <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Notes (optional)</label>
           <input type="text" id="session-notes" class="ainp" placeholder="e.g. paused reps, slow eccentric…" style="width:100%"/>
         </div>
@@ -626,20 +630,43 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <div class="macro-card"><div class="mv" id="mac-carb">—</div><div class="ml">Carbs (g)</div><div class="mt" id="mac-carb-t">target: 220g</div><div class="mt" id="mac-carb-rem"></div><div class="mbar"><div class="mbar-fill" id="mbar-carb" style="background:#378ADD;width:0%"></div></div></div>
       <div class="macro-card"><div class="mv" id="mac-fat">—</div><div class="ml">Fat (g)</div><div class="mt" id="mac-fat-t">target: 70g</div><div class="mt" id="mac-fat-rem"></div><div class="mbar"><div class="mbar-fill" id="mbar-fat" style="background:#D4537E;width:0%"></div></div></div>
     </div>
+    <div class="card" style="margin-bottom:var(--gap)">
+      <div class="ctitle" style="justify-content:space-between">
+        <span>⚖️ Weight</span>
+        <span id="wt-latest" style="font-size:11px;color:var(--text3)"></span>
+      </div>
+      <canvas id="weight-chart" height="120" style="display:none"></canvas>
+      <p id="wt-no-data" style="font-size:12px;color:var(--text3);text-align:center;padding:1rem 0">No weight logged yet.</p>
+      <div class="adrow">
+        <input type="number" id="wt-input" class="ainp" min="0" step="0.1" placeholder="Log today's weight (lb)" onkeydown="if(event.key==='Enter')logWeight()"/>
+        <button class="abtn" onclick="logWeight()">Log</button>
+      </div>
+    </div>
     <div class="twocol">
       <div class="card">
         <div class="ctitle" style="justify-content:space-between">
           <span>🍽 Meals today</span>
           <div style="display:flex;gap:6px">
             <button class="abtn" onclick="openDiningModal()" style="font-size:11px;padding:3px 9px">🏫 import from dining hall</button>
+            <button class="abtn" onclick="openQuickMealModal()" style="font-size:11px;padding:3px 9px">⭐ quick meals</button>
             <button class="abtn" onclick="openMealModal()" style="font-size:11px;padding:3px 9px">+ add meal</button>
           </div>
         </div>
+        <div id="quick-meals-row" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
         <div id="meal-list"><p class="empty-state">No meals logged today.</p></div>
       </div>
       <div class="card">
-        <div class="ctitle">📊 Calories this week</div>
+        <div class="ctitle" style="justify-content:space-between">
+          <span>📊 This week</span>
+          <select id="cal-chart-metric" class="ainp" style="font-size:11px;padding:3px 8px;width:auto" onchange="renderCalChart()">
+            <option value="cal">Calories</option>
+            <option value="pro">Protein</option>
+            <option value="carb">Carbs</option>
+            <option value="fat">Fat</option>
+          </select>
+        </div>
         <canvas id="cal-chart" height="160"></canvas>
+        <div id="cal-chart-avg" style="font-size:11px;color:var(--text2);margin-top:10px;line-height:1.7"></div>
       </div>
     </div>
     <div class="card" style="margin-top:var(--gap)">
@@ -672,6 +699,27 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <div class="modal-btns">
       <button class="abtn" onclick="closeMealModal()">Cancel</button>
       <button class="abtn primary" onclick="addMeal()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUICK MEALS MODAL -->
+<div class="modal-bg" id="quick-meal-modal">
+  <div class="modal" style="max-width:420px">
+    <h3>Quick meals</h3>
+    <div id="quick-meal-list" style="margin-bottom:14px"></div>
+    <div style="border-top:.5px solid var(--border);padding-top:12px">
+      <div class="frow"><label>New quick meal name</label><input type="text" id="qm-name" class="ainp" placeholder="e.g. Usual breakfast" style="width:100%"/></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="frow"><label>Calories</label><input type="number" id="qm-cal" class="ainp" placeholder="500" style="width:100%"/></div>
+        <div class="frow"><label>Protein (g)</label><input type="number" id="qm-pro" class="ainp" placeholder="40" style="width:100%"/></div>
+        <div class="frow"><label>Carbs (g)</label><input type="number" id="qm-carb" class="ainp" placeholder="60" style="width:100%"/></div>
+        <div class="frow"><label>Fat (g)</label><input type="number" id="qm-fat" class="ainp" placeholder="15" style="width:100%"/></div>
+      </div>
+      <button class="abtn primary" onclick="saveQuickMeal()" style="width:100%;margin-top:6px">+ Save as quick meal</button>
+    </div>
+    <div class="modal-btns">
+      <button class="abtn" onclick="closeQuickMealModal()">Close</button>
     </div>
   </div>
 </div>
@@ -977,7 +1025,7 @@ let state = JSON.parse(localStorage.getItem('life_os_v2') || 'null') || {
     { id:3, title:'Land research or internship by Dec',   cat:'professional', status:'active'  },
     { id:4, title:'Consistent upper body program (8wks)', cat:'fitness',      status:'active'  }
   ],
-  nutrition: { meals:{}, targets:{ cal:2400, pro:180, carb:220, fat:70 } },
+  nutrition: { meals:{}, targets:{ cal:2400, pro:180, carb:220, fat:70 }, savedMeals:[] },
   stickies: [],
   nextId: 10
 };
@@ -995,8 +1043,9 @@ const STATE_DEFAULTS = {
   screen: {},
   workouts: {},
   goals: [],
-  nutrition: { meals:{}, targets:{ cal:2400, pro:180, carb:220, fat:70 } },
+  nutrition: { meals:{}, targets:{ cal:2400, pro:180, carb:220, fat:70 }, savedMeals:[] },
   stickies: [],
+  weight: {},           // "YYYY-MM-DD" -> lb value
   programLog: {},       // "YYYY-MM-DD" -> [exercise names checked off that day]
   programWeekAB: 'A',   // manual toggle for the Day 5 two-week rotation
   nextId: 10
@@ -1008,6 +1057,11 @@ function normalizeState() {
       state[key] = JSON.parse(JSON.stringify(STATE_DEFAULTS[key]));
     }
   });
+  // nutrition is an object, not backfilled field-by-field by the loop
+  // above — an existing saved state that HAS `nutrition` but predates
+  // savedMeals needs this nested key added explicitly, or every call site
+  // that reads state.nutrition.savedMeals would throw on old saves.
+  if (!state.nutrition.savedMeals) state.nutrition.savedMeals = [];
 }
 normalizeState();
 
@@ -1107,7 +1161,11 @@ function showTab(t) {
   document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
   document.querySelector(`.tab[onclick="showTab('${t}')"]`).classList.add('active');
   document.getElementById('pane-' + t).classList.add('active');
-  if (t === 'fitness')   { renderProgramDay(); renderSessionLog(); populateChartDropdown(); applyIntensityColors(); loadNote('fitness'); }
+  if (t === 'fitness')   {
+    const dateEl = document.getElementById('session-date');
+    if (dateEl) { dateEl.max = today(); if (!dateEl.value) dateEl.value = today(); }
+    renderProgramDay(); renderSessionLog(); populateChartDropdown(); applyIntensityColors(); loadNote('fitness');
+  }
   if (t === 'nutrition') { renderNutrition(); loadNote('nutrition'); }
   if (t === 'tutoring')  { renderTutoring(); loadNote('tutoring'); }
   if (t === 'appeal')    { renderAppeal(); loadNote('appeal'); }
@@ -1785,22 +1843,26 @@ function logExercise() {
   const mg=document.getElementById('muscle-select').value;
   const mv=document.getElementById('movement-select').value;
   const notes=document.getElementById('session-notes').value.trim();
+  const logDate=document.getElementById('session-date').value || today();
   if (!mg||!mv) { alert('Select a muscle group and movement.'); return; }
   const repsEls=document.querySelectorAll('.reps-input');
   if (!repsEls.length) { alert('Enter number of sets.'); return; }
   const sets=Array.from(repsEls).map((el,i)=>({ reps:parseInt(el.value)||0, weight:document.querySelectorAll('.weight-input')[i].value||'BW' }));
   const sessions=getSessions();
-  sessions.push({ date:today(), muscleGroup:mg, movement:mv, sets, notes, ts:Date.now() });
+  sessions.push({ date:logDate, muscleGroup:mg, movement:mv, sets, notes, ts:Date.now() });
   saveSessions(sessions);
-  state.workouts[today()]=(state.workouts[today()]||0)+1; save(); render();
+  // Counts toward the HEATMAP DAY YOU'RE LOGGING FOR, not necessarily
+  // today — that's the whole point of letting the date be backdated.
+  state.workouts[logDate]=(state.workouts[logDate]||0)+1; save(); render();
   // Reset form
   document.getElementById('muscle-select').value='';
   document.getElementById('movement-select').innerHTML='<option value="">— select muscle group first —</option>';
   document.getElementById('sets-input').value='';
   document.getElementById('sets-container').innerHTML='';
   document.getElementById('session-notes').value='';
+  document.getElementById('session-date').value=today();
   renderSessionLog(); populateChartDropdown(); applyIntensityColors();
-  alert(`Logged: ${mv} — ${sets.length} set${sets.length>1?'s':''}`);
+  alert(`Logged: ${mv} — ${sets.length} set${sets.length>1?'s':''}${logDate!==today() ? ` on ${fmt(logDate)}` : ''}`);
 }
 
 
@@ -1864,6 +1926,16 @@ function populateChartDropdown() {
   if (cur && movements.includes(cur)) sel.value=cur;
 }
 
+// Canvas (what Chart.js draws into) does NOT resolve CSS custom properties
+// the way DOM elements do — ctx.fillStyle = 'var(--text2)' is an invalid
+// color string to canvas, and silently falls back to black rather than
+// erroring. That's why axis labels have effectively been unreadable in
+// dark mode: real black text on a near-black background. This returns an
+// actual literal color instead, brightened further for dark mode.
+function chartTickColor(isDark) {
+  return isDark ? '#e4e4e7' : '#6b7280';
+}
+
 function renderChart(mv) {
   const canvas=document.getElementById('progress-chart'), noData=document.getElementById('no-data-msg'), hint=document.getElementById('chart-hint');
   if (!mv) { canvas.style.display='none'; noData.style.display='none'; hint.style.display='block'; return; }
@@ -1873,11 +1945,12 @@ function renderChart(mv) {
   canvas.style.display='block'; noData.style.display='none';
   const isDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
   const gc=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.06)';
+  const tc=chartTickColor(isDark);
   if (chartInstance) chartInstance.destroy();
   chartInstance=new Chart(canvas.getContext('2d'),{
     type:'line',
     data:{ labels:sessions.map(s=>fmt(s.date)), datasets:[{ label:'Total reps', data:sessions.map(s=>s.sets.reduce((a,b)=>a+b.reps,0)), borderColor:'#1D9E75', backgroundColor:'rgba(29,158,117,0.1)', tension:0.3, pointRadius:5, pointBackgroundColor:'#1D9E75' }] },
-    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:false,title:{display:true,text:'Total reps'},grid:{color:gc},ticks:{color:'var(--text2)'}}, x:{grid:{color:gc},ticks:{color:'var(--text2)'}} } }
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:false,title:{display:true,text:'Total reps'},grid:{color:gc},ticks:{color:tc}}, x:{grid:{color:gc},ticks:{color:tc}} } }
   });
 }
 
@@ -1904,12 +1977,67 @@ function addMeal() {
 
 function deleteMeal(idx) { state.nutrition.meals[today()].splice(idx,1); save(); renderNutrition(); }
 
+// ── QUICK MEALS ────────────────────────────────────────────────────────
+// One tap logs the saved meal's EXACT macros as-is, no quantity step —
+// deliberately, so this stays a true one-tap action. If the amount eaten
+// varies that day, "+ add meal" is still there for a one-off edit.
+function renderQuickMeals() {
+  const row = document.getElementById('quick-meals-row');
+  if (!row) return;
+  row.innerHTML = state.nutrition.savedMeals.map(m => `
+    <button class="abtn" style="font-size:11px;padding:4px 10px;display:flex;align-items:center;gap:5px" onclick="quickAddMeal(${m.id})">
+      ⭐ ${m.name} <span style="color:var(--text3)">${m.cal} cal</span>
+    </button>`).join('');
+}
+
+function quickAddMeal(id) {
+  const m = state.nutrition.savedMeals.find(x => x.id === id); if (!m) return;
+  const td = today();
+  if (!state.nutrition.meals[td]) state.nutrition.meals[td] = [];
+  state.nutrition.meals[td].push({ name: m.name, cal: m.cal, pro: m.pro, carb: m.carb, fat: m.fat, ts: Date.now() });
+  save();
+  renderNutrition();
+}
+
+const openQuickMealModal = () => { renderQuickMealManageList(); document.getElementById('quick-meal-modal').classList.add('open'); };
+const closeQuickMealModal = () => document.getElementById('quick-meal-modal').classList.remove('open');
+document.getElementById('quick-meal-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeQuickMealModal(); });
+
+function renderQuickMealManageList() {
+  const el = document.getElementById('quick-meal-list');
+  el.innerHTML = state.nutrition.savedMeals.length
+    ? state.nutrition.savedMeals.map(m => `<div class="meal-row"><div><div class="meal-name">${m.name}</div><div class="meal-macros">${m.pro}g P · ${m.carb}g C · ${m.fat}g F</div></div><div style="display:flex;align-items:center;gap:8px"><div class="meal-cals">${m.cal} cal</div><button class="delbtn" onclick="deleteQuickMeal(${m.id})">✕</button></div></div>`).join('')
+    : '<p class="empty-state">No quick meals saved yet.</p>';
+}
+
+function saveQuickMeal() {
+  const name = document.getElementById('qm-name').value.trim(); if (!name) { alert('Enter a name.'); return; }
+  const cal = parseFloat(document.getElementById('qm-cal').value) || 0;
+  const pro = parseFloat(document.getElementById('qm-pro').value) || 0;
+  const carb = parseFloat(document.getElementById('qm-carb').value) || 0;
+  const fat = parseFloat(document.getElementById('qm-fat').value) || 0;
+  state.nutrition.savedMeals.push({ id: state.nextId++, name, cal, pro, carb, fat });
+  save();
+  ['qm-name','qm-cal','qm-pro','qm-carb','qm-fat'].forEach(id => document.getElementById(id).value = '');
+  renderQuickMealManageList();
+  renderQuickMeals();
+}
+
+function deleteQuickMeal(id) {
+  state.nutrition.savedMeals = state.nutrition.savedMeals.filter(m => m.id !== id);
+  save();
+  renderQuickMealManageList();
+  renderQuickMeals();
+}
+
 function saveTargets() {
   state.nutrition.targets={ cal:parseFloat(document.getElementById('t-cal').value)||2400, pro:parseFloat(document.getElementById('t-pro').value)||180, carb:parseFloat(document.getElementById('t-carb').value)||220, fat:parseFloat(document.getElementById('t-fat').value)||70 };
   save(); renderNutrition();
 }
 
 function renderNutrition() {
+  renderWeightChart();
+  renderQuickMeals();
   const td=today(), meals=state.nutrition.meals[td]||[], targets=state.nutrition.targets;
   document.getElementById('t-cal').value=targets.cal||''; document.getElementById('t-pro').value=targets.pro||'';
   document.getElementById('t-carb').value=targets.carb||''; document.getElementById('t-fat').value=targets.fat||'';
@@ -1937,13 +2065,76 @@ function renderNutrition() {
   document.getElementById('meal-list').innerHTML=meals.length
     ? meals.map((m,i)=>`<div class="meal-row"><div><div class="meal-name">${m.name}</div><div class="meal-macros">${m.pro}g P · ${m.carb}g C · ${m.fat}g F</div></div><div style="display:flex;align-items:center;gap:8px"><div class="meal-cals">${m.cal} cal</div><button class="delbtn" onclick="deleteMeal(${i})">✕</button></div></div>`).join('')
     : '<p class="empty-state">No meals logged today.</p>';
-  const days7=Array.from({length:7},(_,i)=>new Date(Date.now()-(6-i)*DAY_MS).toISOString().slice(0,10));
-  const isDark=window.matchMedia('(prefers-color-scheme:dark)').matches, gc=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.06)';
-  if (calChartInstance) calChartInstance.destroy();
-  calChartInstance=new Chart(document.getElementById('cal-chart').getContext('2d'),{
-    type:'bar', data:{labels:days7.map(d=>fmt(d)),datasets:[{label:'Calories',data:days7.map(d=>(state.nutrition.meals[d]||[]).reduce((a,m)=>a+m.cal,0)),backgroundColor:'rgba(29,158,117,0.7)',borderRadius:4}]},
-    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:gc},ticks:{color:'var(--text2)'}},x:{grid:{display:false},ticks:{color:'var(--text2)'}}}}
+  renderCalChart();
+}
+
+let weightChartInstance = null;
+
+function logWeight() {
+  const inp = document.getElementById('wt-input'), v = parseFloat(inp.value);
+  if (isNaN(v) || v <= 0) return;
+  state.weight[today()] = v;
+  inp.value = '';
+  save();
+  renderWeightChart();
+}
+
+// Reuses the same Chart.js line pattern as the fitness progress chart
+// (same tension/point styling, same dark-mode-aware literal tick color).
+function renderWeightChart() {
+  const canvas = document.getElementById('weight-chart'), noData = document.getElementById('wt-no-data');
+  const entries = Object.keys(state.weight).sort();
+  const latestEl = document.getElementById('wt-latest');
+  latestEl.textContent = entries.length ? `latest: ${state.weight[entries[entries.length-1]]} lb (${fmt(entries[entries.length-1])})` : '';
+
+  if (!entries.length) { canvas.style.display = 'none'; noData.style.display = 'block'; return; }
+  canvas.style.display = 'block'; noData.style.display = 'none';
+
+  const isDark = window.matchMedia('(prefers-color-scheme:dark)').matches;
+  const gc = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+  const tc = chartTickColor(isDark);
+  if (weightChartInstance) weightChartInstance.destroy();
+  weightChartInstance = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: { labels: entries.map(fmt), datasets: [{ label: 'Weight (lb)', data: entries.map(d => state.weight[d]), borderColor: '#1D9E75', backgroundColor: 'rgba(29,158,117,0.1)', tension: 0.3, pointRadius: 4, pointBackgroundColor: '#1D9E75' }] },
+    options: { responsive: true, plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: false, grid: { color: gc }, ticks: { color: tc } }, x: { grid: { color: gc }, ticks: { color: tc } } } }
   });
+}
+
+const METRIC_META = {
+  cal:  { label: 'Calories', unit: '',  color: 'rgba(186,117,23,0.75)' },  // matches --am
+  pro:  { label: 'Protein',  unit: 'g', color: 'rgba(29,158,117,0.75)' },  // matches --g
+  carb: { label: 'Carbs',    unit: 'g', color: 'rgba(55,138,221,0.75)' },  // matches nutrition carb bar
+  fat:  { label: 'Fat',      unit: 'g', color: 'rgba(212,83,126,0.75)' }   // matches nutrition fat bar
+};
+
+function renderCalChart() {
+  const metric = document.getElementById('cal-chart-metric').value;
+  const meta = METRIC_META[metric];
+  const days7 = Array.from({length:7},(_,i)=>new Date(Date.now()-(6-i)*DAY_MS).toISOString().slice(0,10));
+  const values = days7.map(d => (state.nutrition.meals[d]||[]).reduce((a,m)=>a+(m[metric]||0),0));
+  const isDark = window.matchMedia('(prefers-color-scheme:dark)').matches;
+  const gc = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+  const tc = chartTickColor(isDark);
+
+  if (calChartInstance) calChartInstance.destroy();
+  calChartInstance = new Chart(document.getElementById('cal-chart').getContext('2d'), {
+    type: 'bar',
+    data: { labels: days7.map(d=>fmt(d)), datasets: [{ label: meta.label, data: values, backgroundColor: meta.color, borderRadius: 4 }] },
+    options: { responsive:true, plugins:{legend:{display:false}},
+      scales: { y:{beginAtZero:true,grid:{color:gc},ticks:{color:tc}}, x:{grid:{display:false},ticks:{color:tc}} } }
+  });
+
+  // Averaged only over days with at least one logged meal, so a day you
+  // simply forgot to log doesn't drag the average toward zero.
+  const loggedDays = days7.filter(d => (state.nutrition.meals[d]||[]).length);
+  const avgFor = m => loggedDays.length
+    ? Math.round(loggedDays.reduce((a,d)=>a+(state.nutrition.meals[d]||[]).reduce((s,x)=>s+(x[m]||0),0),0) / loggedDays.length)
+    : 0;
+  document.getElementById('cal-chart-avg').textContent = loggedDays.length
+    ? `Weekly avg (${loggedDays.length} logged day${loggedDays.length!==1?'s':''}): ${avgFor('cal')} cal · ${avgFor('pro')}g protein · ${avgFor('carb')}g carbs · ${avgFor('fat')}g fat`
+    : 'No meals logged this week yet.';
 }
 
 // ── 13b. DINING HALL IMPORT ──────────────────────────────────────────
