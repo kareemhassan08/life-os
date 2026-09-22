@@ -1936,6 +1936,17 @@ function chartTickColor(isDark) {
   return isDark ? '#e4e4e7' : '#6b7280';
 }
 
+// Pulls the first number out of a free-text weight field ("40lb" -> 40).
+// Returns null for non-numeric entries ("BW") — those sessions get a gap
+// in the weight line rather than a fabricated zero, which would visually
+// read as "you lifted nothing" instead of "not tracked as a number."
+function parseSessionTopWeight(sets) {
+  const nums = sets
+    .map(s => { const m = String(s.weight).match(/-?[\d.]+/); return m ? parseFloat(m[0]) : null; })
+    .filter(n => n !== null);
+  return nums.length ? Math.max(...nums) : null;
+}
+
 function renderChart(mv) {
   const canvas=document.getElementById('progress-chart'), noData=document.getElementById('no-data-msg'), hint=document.getElementById('chart-hint');
   if (!mv) { canvas.style.display='none'; noData.style.display='none'; hint.style.display='block'; return; }
@@ -1946,11 +1957,19 @@ function renderChart(mv) {
   const isDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
   const gc=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.06)';
   const tc=chartTickColor(isDark);
+  const weights = sessions.map(s => parseSessionTopWeight(s.sets));
   if (chartInstance) chartInstance.destroy();
   chartInstance=new Chart(canvas.getContext('2d'),{
     type:'line',
-    data:{ labels:sessions.map(s=>fmt(s.date)), datasets:[{ label:'Total reps', data:sessions.map(s=>s.sets.reduce((a,b)=>a+b.reps,0)), borderColor:'#1D9E75', backgroundColor:'rgba(29,158,117,0.1)', tension:0.3, pointRadius:5, pointBackgroundColor:'#1D9E75' }] },
-    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:false,title:{display:true,text:'Total reps'},grid:{color:gc},ticks:{color:tc}}, x:{grid:{color:gc},ticks:{color:tc}} } }
+    data:{ labels:sessions.map(s=>fmt(s.date)), datasets:[
+      { label:'Total reps', data:sessions.map(s=>s.sets.reduce((a,b)=>a+b.reps,0)), borderColor:'#1D9E75', backgroundColor:'rgba(29,158,117,0.1)', tension:0.3, pointRadius:5, pointBackgroundColor:'#1D9E75', yAxisID:'y' },
+      { label:'Top weight', data:weights, borderColor:'#378ADD', backgroundColor:'rgba(55,138,221,0.1)', tension:0.3, pointRadius:5, pointBackgroundColor:'#378ADD', yAxisID:'y1', spanGaps:true }
+    ]},
+    options:{ responsive:true, plugins:{legend:{display:true,labels:{color:tc}}}, scales:{
+      y:  { beginAtZero:false, position:'left',  title:{display:true,text:'Total reps',color:tc}, grid:{color:gc}, ticks:{color:tc} },
+      y1: { beginAtZero:false, position:'right', title:{display:true,text:'Top weight',color:tc}, grid:{display:false}, ticks:{color:tc} },
+      x:  { grid:{color:gc}, ticks:{color:tc} }
+    }}
   });
 }
 
